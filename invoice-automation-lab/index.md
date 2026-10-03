@@ -108,6 +108,7 @@ ITEMS
 |  No. | Description | Qty | UM | Net price | Net worth | VAT [%] | Gross worth  |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 |  1. | EU Blichmann Riptide Brewing Pump - Hombrew Beer Wine ...
+
 Structured Output result: invoice_number='97833274' date='2014-03-09'
 total_amount=440.0 bank_details='GB88PASK22658399910069'
 supplier='Baker, Pearson and Perry' invoice_category='raw_materials'

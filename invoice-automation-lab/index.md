@@ -243,8 +243,6 @@ The paused workflow wakes, reads the decision, and finishes:
 Signals are a general primitive — see the
 [signals reference](https://docs.mistral.ai/studio/workflows/interacting-with-workflows/signals).
 
-![Signals in the Workflows docs](assets/workflows-signals-docs.png)
-
 **Checkpoint:** an invoice above $3,000 cannot complete until a human says so.
 
 ## Crash It On Purpose
@@ -336,8 +334,6 @@ one folder path.
 - Add LLM-as-a-judge evaluation of extractions with the
   [evaluations toolkit](https://docs.mistral.ai/studio/observability/evaluations/evaluators)
 - Go deeper with [core concepts](https://docs.mistral.ai/studio/workflows/getting-started/core_concepts)
-
-![Workflows in the Mistral docs](assets/workflows-docs-overview.png)
 
 ### Related Resources
 

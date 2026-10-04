@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04T15:56:56+00:00",
+  "generated_at": "2026-10-04T16:03:51+00:00",
   "count": 1,
   "guides": [
     {
@@ -26,7 +26,7 @@
       "level": "Beginner",
       "time": "60 minutes",
       "authors": "Vinit Shetty (vinitshetty)",
-      "fork": "https://github.com/vinitshetty/mistral-devguides",
+      "fork": "https://github.com/vinitshetty/mistral-devguides/tree/main/invoice-automation-lab",
       "platform": "https://console.mistral.ai/",
       "language": "en",
       "art": "invoice-automation-lab/assets/invoice-pipeline.svg",

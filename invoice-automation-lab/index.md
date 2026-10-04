@@ -12,7 +12,7 @@ status: Published
 authors: Vinit Shetty (vinitshetty)
 summary: Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.
 feedback link: https://github.com/vinitshetty/mistral-devguides/issues
-fork repo link: https://github.com/vinitshetty/mistral-devguides
+fork repo link: https://github.com/vinitshetty/mistral-devguides/tree/main/invoice-automation-lab
 platform link: https://console.mistral.ai/
 estimated_time: 60 minutes
 level: Beginner
@@ -467,4 +467,4 @@ by changing one folder path.
 - [Observability and evaluations](https://docs.mistral.ai/studio/observability)
 - [Document processing overview](https://docs.mistral.ai/studio/document-processing/overview)
 - [mistralai-workflows on PyPI](https://pypi.org/project/mistralai-workflows/)
-- [Lab repository — fork it](https://github.com/vinitshetty/mistral-devguides)
+- [Lab repository — fork it](https://github.com/vinitshetty/mistral-devguides/tree/main/invoice-automation-lab)

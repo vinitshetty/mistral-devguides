@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide - Mistral Developer Guides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="./assets/site.css">
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <a class="brand" href="./index.html">
+    <span class="brand-mark">M</span>
+    <span class="brand-name">MISTRAL <em>DEVELOPER GUIDES</em></span>
+  </a>
+  <div class="reader-actions">
+    <a class="btn" id="fork-btn" href="https://github.com/vinitshetty/mistral-devguides" target="_blank" rel="noopener" style="display:none">Fork Repo</a>
+    <a class="btn accent" href="https://console.mistral.ai" target="_blank" rel="noopener">Open in Mistral Console</a>
+  </div>
+</header>
+
+<main class="reader">
+  <article class="markdown-body" id="content">
+    <div class="loading">Loading guide ...</div>
+  </article>
+  <aside class="rail">
+    <h4>On this page</h4>
+    <nav id="toc"></nav>
+    <div class="rail-cta">
+      <p>Ready to build?</p>
+      <a class="btn accent" id="console-cta" href="https://console.mistral.ai" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span>Spot an issue? <a href="https://github.com/vinitshetty/mistral-devguides/issues">File feedback</a> or open a PR.</span>
+  <nav>
+    <a href="./index.html">All guides</a>
+    <a href="https://docs.mistral.ai">Docs</a>
+    <a href="https://github.com/vinitshetty/mistral-devguides">GitHub</a>
+  </nav>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="./assets/site.js"></script>
+</body>
+</html>

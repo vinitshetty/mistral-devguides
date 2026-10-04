@@ -1,0 +1,401 @@
+/* Mistral Developer Guides - site logic.
+   Guides are discovered and rendered live from the git repo. */
+"use strict";
+
+const REPO = { owner: "vinitshetty", repo: "mistral-devguides", branch: "main" };
+const RAW_BASE = `https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${REPO.branch}/`;
+const CONTENTS_API = `https://api.github.com/repos/${REPO.owner}/${REPO.repo}/contents/`;
+const FALLBACK_GUIDES = ["invoice-automation-lab"];
+
+const TAXONOMY = {
+  "Content type": [
+    "Quickstart",
+    "Community Guide",
+    "Partner Guide",
+    "Mistral-Certified",
+    "Reference Architecture",
+  ],
+  "Product category": [
+    "Mistral API",
+    "AI Studio",
+    "Agents",
+    "Le Chat",
+    "Open-weight models",
+    "Fine-tuning",
+    "Self-deployment",
+  ],
+  "Industry": [
+    "Financial Services",
+    "Legal",
+    "Public Sector",
+    "Healthcare & Life Sciences",
+    "Retail & E-commerce",
+    "Manufacturing",
+    "Technology",
+    "Media",
+  ],
+};
+
+/* ---------- front matter ---------- */
+
+function parseFrontMatter(text) {
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!match) return { meta: {}, body: text };
+  const meta = {};
+  let key = null;
+  for (const line of match[1].split(/\r?\n/)) {
+    const listMatch = line.match(/^\s+-\s+(.*)$/);
+    if (listMatch && key) {
+      if (!Array.isArray(meta[key])) meta[key] = [];
+      meta[key].push(listMatch[1].trim());
+      continue;
+    }
+    const kv = line.match(/^([^:]+):\s*(.*)$/);
+    if (kv) {
+      key = kv[1].trim();
+      meta[key] = kv[2].trim();
+    }
+  }
+  return { meta, body: text.slice(match[0].length) };
+}
+
+function guideTitle(body) {
+  const m = body.match(/^#\s+(.+)$/m);
+  return m ? m[1].trim() : "Untitled guide";
+}
+
+function guideCategories(meta) {
+  const cats = Array.isArray(meta.categories) ? meta.categories : [meta.categories].filter(Boolean);
+  return cats.map((c) => c.trim());
+}
+
+function contentTypeOf(cats) {
+  const types = TAXONOMY["Content type"];
+  return cats.find((c) => types.includes(c)) || "Quickstart";
+}
+
+function industriesOf(cats) {
+  const set = new Set(TAXONOMY["Industry"]);
+  return cats.filter((c) => set.has(c));
+}
+
+function productsOf(cats) {
+  return cats
+    .filter((c) => c.includes(">"))
+    .map((c) => c.split(">")[0].trim())
+    .filter((c) => TAXONOMY["Product category"].includes(c));
+}
+
+/* ---------- discovery ---------- */
+
+async function fetchGuide(id) {
+  const res = await fetch(RAW_BASE + encodeURIComponent(id).replace("%2F", "/") + "/index.md");
+  if (!res.ok) return null;
+  const text = await res.text();
+  const { meta, body } = parseFrontMatter(text);
+  if (meta.status && meta.status !== "Published") return null;
+  return {
+    id,
+    meta,
+    body,
+    title: meta.title || guideTitle(body),
+    summary: meta.summary || "",
+    cats: guideCategories(meta),
+    contentType: contentTypeOf(guideCategories(meta)),
+    industries: industriesOf(guideCategories(meta)),
+    products: productsOf(guideCategories(meta)),
+    level: meta.level || "",
+    time: meta.estimated_time || "",
+    authors: meta.authors || "",
+    fork: meta["fork repo link"] || "",
+    platform: (meta["platform link"] || "").trim(),
+  };
+}
+
+async function discoverGuides() {
+  const cacheKey = "devguides-index-v1";
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (_) { /* fall through */ }
+  }
+  const ids = [];
+  try {
+    const res = await fetch(CONTENTS_API);
+    if (res.ok) {
+      const entries = await res.json();
+      for (const e of entries) {
+        if (e.type === "dir" && !e.name.startsWith(".") && e.name !== "docs") ids.push(e.name);
+      }
+    }
+  } catch (_) { /* offline or rate-limited */ }
+  if (ids.length === 0) ids.push(...FALLBACK_GUIDES);
+  const guides = (await Promise.all(ids.map(fetchGuide))).filter(Boolean);
+  try { sessionStorage.setItem(cacheKey, JSON.stringify(guides.map(({ body, ...rest }) => rest))); } catch (_) {}
+  return guides;
+}
+
+function guideFromCache(id) {
+  const cached = sessionStorage.getItem("devguides-index-v1");
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached).find((g) => g.id === id) || null;
+  } catch (_) { return null; }
+}
+
+function firstArt(g) {
+  const m = g.body && g.body.match(/!\[[^\]]*\]\((assets\/[^)]+)\)/);
+  return m ? RAW_BASE + g.id + "/" + m[1] : null;
+}
+
+/* ---------- catalog page ---------- */
+
+async function initCatalog() {
+  const guides = await discoverGuides();
+  const grid = document.getElementById("grid");
+  const featured = document.getElementById("featured");
+  const empty = document.getElementById("empty");
+  const filtersBox = document.getElementById("filters");
+  const search = document.getElementById("search");
+  const sort = document.getElementById("sort");
+  const countEl = document.getElementById("results-count");
+  const statsEl = document.getElementById("stats");
+
+  if (statsEl) {
+    statsEl.textContent =
+      guides.length + (guides.length === 1 ? " guide" : " guides") + " - rendered live from the repo";
+  }
+
+  const state = { q: "", sort: "az", content: new Set(), industry: new Set(), product: new Set() };
+
+  function matches(g) {
+    if (state.content.size && !state.content.has(g.contentType)) return false;
+    if (state.industry.size && !g.industries.some((i) => state.industry.has(i))) return false;
+    if (state.product.size && !g.products.some((p) => state.product.has(p))) return false;
+    if (state.q) {
+      const hay = (g.title + " " + g.summary + " " + g.cats.join(" ")).toLowerCase();
+      if (!hay.includes(state.q)) return false;
+    }
+    return true;
+  }
+
+  function card(g) {
+    const art = firstArt(g);
+    const link = "guide.html?id=" + encodeURIComponent(g.id);
+    const tags = [g.level, g.time].filter(Boolean)
+      .map((t) => '<span class="tag">' + escapeHtml(t) + "</span>").join("");
+    return (
+      '<div class="card">' +
+      '<a class="card-link" href="' + link + '">' +
+      '<div class="art">' + (art ? '<img src="' + art + '" alt="">' : "") + "</div>" +
+      '<span class="kicker">' + escapeHtml(g.contentType) + "</span>" +
+      "<h3>" + escapeHtml(g.title) + "</h3>" +
+      "<p>" + escapeHtml(g.summary) + "</p>" +
+      "</a>" +
+      '<div class="tags">' + tags + "</div>" +
+      "</div>"
+    );
+  }
+
+  function render() {
+    const list = guides.filter(matches).sort((a, b) =>
+      state.sort === "za" ? b.title.localeCompare(a.title) : a.title.localeCompare(b.title)
+    );
+    countEl.innerHTML = "<strong>" + list.length + "</strong> result" + (list.length === 1 ? "" : "s");
+    grid.innerHTML = list.slice(1).map(card).join("");
+    const hero = list[0];
+    if (hero) {
+      const art = firstArt(hero);
+      const link = "guide.html?id=" + encodeURIComponent(hero.id);
+      featured.style.display = "";
+      featured.innerHTML =
+        '<a class="card-link" href="' + link + '" style="display:contents">' +
+        '<div class="featured-body">' +
+        '<span class="kicker">Featured - ' + escapeHtml(hero.contentType) + "</span>" +
+        "<h3>" + escapeHtml(hero.title) + "</h3>" +
+        "<p>" + escapeHtml(hero.summary) + "</p>" +
+        '<div class="tags">' +
+        '<span class="tag hot">' + escapeHtml(hero.level) + "</span>" +
+        '<span class="tag">' + escapeHtml(hero.time) + "</span>" +
+        hero.industries.map((i) => '<span class="tag">' + escapeHtml(i) + "</span>").join("") +
+        "</div></div>" +
+        '<div class="featured-art">' + (art ? '<img src="' + art + '" alt="">' : "") + "</div>" +
+        "</a>";
+    } else {
+      featured.style.display = "none";
+    }
+    empty.hidden = list.length > 0;
+    document.querySelectorAll("#filters input[data-facet]").forEach((cb) => {
+      cb.closest("label").querySelector(".count").textContent = guides.filter((g) => {
+        const set = state[cb.dataset.group];
+        return cb.dataset.group === "content" ? g.contentType === cb.dataset.facet
+          : cb.dataset.group === "industry" ? g.industries.includes(cb.dataset.facet)
+          : g.products.includes(cb.dataset.facet);
+      }).length;
+    });
+  }
+
+  /* filters UI */
+  const groups = { content: "Content type", product: "Product category", industry: "Industry" };
+  let html = "";
+  for (const [group, label] of Object.entries(groups)) {
+    html += '<div class="facet"><h4>' + label + "</h4>";
+    for (const facet of TAXONOMY[label]) {
+      html +=
+        '<label><input type="checkbox" data-facet="' + escapeHtml(facet) +
+        '" data-group="' + group + '"><span>' + escapeHtml(facet) +
+        '</span><span class="count"></span></label>';
+    }
+    html += "</div>";
+  }
+  html += '<button class="clear" id="clear-filters">Clear all filters</button>';
+  filtersBox.innerHTML = html;
+
+  filtersBox.addEventListener("change", (e) => {
+    const cb = e.target;
+    if (cb.dataset.facet) {
+      const set = state[cb.dataset.group];
+      cb.checked ? set.add(cb.dataset.facet) : set.delete(cb.dataset.facet);
+      render();
+    }
+  });
+  document.getElementById("clear-filters").addEventListener("click", () => {
+    state.content.clear(); state.industry.clear(); state.product.clear(); state.q = "";
+    search.value = "";
+    filtersBox.querySelectorAll("input").forEach((cb) => (cb.checked = false));
+    render();
+  });
+
+  let debounce;
+  search.addEventListener("input", () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { state.q = search.value.trim().toLowerCase(); render(); }, 120);
+  });
+  sort.addEventListener("change", () => { state.sort = sort.value; render(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== search) {
+      e.preventDefault(); search.focus();
+    }
+  });
+
+  render();
+}
+
+/* ---------- reader page ---------- */
+
+async function initReader() {
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id");
+  const content = document.getElementById("content");
+  const toc = document.getElementById("toc");
+  const progress = document.getElementById("progress");
+  if (!id) {
+    content.innerHTML =
+      '<div class="error-box">Missing guide id. <a href="./index.html">Back to all guides</a></div>';
+    return;
+  }
+
+  const cached = guideFromCache(id);
+  let g = cached ? { ...cached, body: null } : null;
+  if (!g || !g.title) g = await fetchGuide(id);
+  if (!g) {
+    content.innerHTML =
+      '<div class="error-box">Guide <code>' + escapeHtml(id) + "</code> not found in the repo. " +
+      '<a href="./index.html">Back to all guides</a></div>';
+    return;
+  }
+
+  /* resolve relative asset/link paths against the repo */
+  const body = g.body.replace(
+    /\]\((assets\/[^)]+)\)/g,
+    "](" + RAW_BASE + id + "/$1)"
+  );
+
+  document.title = g.title + " - Mistral Developer Guides";
+  marked.setOptions({ gfm: true, breaks: false });
+  content.innerHTML =
+    '<div class="guide-head">' +
+    '<span class="kicker">' + escapeHtml(g.contentType) + "</span>" +
+    "<h1>" + escapeHtml(g.title) + "</h1>" +
+    '<div class="sub">' + escapeHtml(g.summary) + "</div>" +
+    '<div class="byline">' +
+    (g.authors ? "<span>by " + escapeHtml(g.authors) + "</span>" : "") +
+    (g.level ? "<span>" + escapeHtml(g.level) + "</span>" : "") +
+    (g.time ? "<span>" + escapeHtml(g.time) + "</span>" : "") +
+    "</div></div>" +
+    marked.parse(body);
+
+  /* header actions from front matter */
+  if (g.fork) {
+    document.getElementById("fork-btn").href = g.fork;
+    document.getElementById("fork-btn").style.display = "";
+  }
+  const cta = document.getElementById("console-cta");
+  if (g.platform && !cta.dataset.forced) cta.href = g.platform;
+
+  /* style checkpoint callouts */
+  content.querySelectorAll("p").forEach((p) => {
+    if (p.textContent.trim().startsWith("Checkpoint:")) p.classList.add("checkpoint");
+  });
+
+  /* build TOC from H2s */
+  const heads = [...content.querySelectorAll("h2")];
+  heads.forEach((h, i) => {
+    h.id = h.id || "step-" + i;
+    const a = document.createElement("a");
+    a.href = "#" + h.id;
+    a.textContent = h.textContent;
+    toc.appendChild(a);
+  });
+  if (heads.length === 0) toc.parentNode.style.display = "none";
+
+  const links = [...toc.querySelectorAll("a")];
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) {
+          links.forEach((a) => a.classList.toggle("active", a.href === "#" + en.target.id));
+        }
+      }
+    },
+    { rootMargin: "-20% 0px -70% 0px" }
+  );
+  heads.forEach((h) => observer.observe(h));
+
+  /* copy buttons on code blocks */
+  content.querySelectorAll("pre").forEach((pre) => {
+    const btn = document.createElement("button");
+    btn.className = "copy-btn";
+    btn.type = "button";
+    btn.textContent = "copy";
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pre.innerText);
+        btn.textContent = "copied";
+        setTimeout(() => (btn.textContent = "copy"), 1500);
+      } catch (_) { btn.textContent = "failed"; }
+    });
+    pre.appendChild(btn);
+  });
+
+  if (window.hljs) content.querySelectorAll("pre code").forEach((b) => hljs.highlightElement(b));
+
+  /* reading progress */
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    progress.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+  };
+  document.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("grid")) initCatalog();
+  if (document.getElementById("content")) initReader();
+});

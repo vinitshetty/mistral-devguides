@@ -36,7 +36,7 @@ Front matter must stay flat: `key: value` lines and `- item` lists only.
 ## Controlled taxonomy
 
 - **Content type:** Quickstart - Community Guide - Partner Guide - Mistral-Certified - Reference Architecture
-- **Product category (as `Root > Feature`):** Mistral API - AI Studio - Agents - Le Chat - Open-weight models - Fine-tuning - Self-deployment
+- **Product category (as `Root > Feature`):** Mistral API - AI Studio - Agents - Vibe - Open-weight models - Fine-tuning - Self-deployment
 - **Industry:** Financial Services - Legal - Public Sector - Healthcare & Life Sciences - Retail & E-commerce - Manufacturing - Technology - Media
 
 Authors select from this list; CI rejects unknown categories. To evolve the

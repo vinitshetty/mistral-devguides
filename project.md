@@ -207,7 +207,7 @@ Developers hub (mistral.ai/developers)
 - **Product category:**
   - Mistral API (Chat Completions, OCR, Embeddings, Moderation, Batch)
   - Agents (Agent Builder, Agents API, tools/function calling, MCP)
-  - Le Chat & productivity (Le Chat, Deep Research, Canvas, connectors)
+  - Vibe (assistants, Deep Research, Canvas, connectors)
   - Open-weight models (Mistral Large/Medium/Small, Ministra, Codestral, Devstral, Mathstral,
     Voxtral, Magistral, Pixtral)
   - Fine-tuning & customization (API fine-tuning, evals, prompt libraries)
@@ -400,8 +400,9 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
 ### 7.1 Terminology
 
 - Say **Mistral Console** (console.mistral.ai). Never "La Plateforme" — retired brand.
+- The chat product is **Vibe** (vibe.mistral.ai). Never "Le Chat" — retired brand.
 - Current naming: **Mistral API** (the HTTP API), **AI Studio** (the console workbench),
-  **Le Chat** (the chat product).
+  **Vibe** (the chat product).
 - Front-matter taxonomy follows the same rule — e.g. `Mistral API > OCR`, never
   `La Plateforme > ...`.
 

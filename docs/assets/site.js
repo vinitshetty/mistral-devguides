@@ -22,7 +22,7 @@ const TAXONOMY = {
     "Mistral API",
     "AI Studio",
     "Agents",
-    "Le Chat",
+    "Vibe",
     "Open-weight models",
     "Fine-tuning",
     "Self-deployment",

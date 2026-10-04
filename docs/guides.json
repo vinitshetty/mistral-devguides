@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04T15:48:13+00:00",
+  "generated_at": "2026-10-04T15:56:47+00:00",
   "count": 1,
   "guides": [
     {
@@ -11,7 +11,7 @@
         "AI Studio > Playground",
         "AI Studio > Workflows",
         "Mistral API > OCR",
-        "Le Chat > Assistants",
+        "Vibe > Assistants",
         "Financial Services"
       ],
       "contentType": "Quickstart",
@@ -21,7 +21,7 @@
       "products": [
         "AI Studio",
         "Mistral API",
-        "Le Chat"
+        "Vibe"
       ],
       "level": "Beginner",
       "time": "60 minutes",

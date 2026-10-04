@@ -6,7 +6,7 @@ categories:
   - AI Studio > Playground
   - AI Studio > Workflows
   - Mistral API > OCR
-  - Le Chat > Assistants
+  - Vibe > Assistants
   - Financial Services
 status: Published
 authors: Vinit Shetty (vinitshetty)
@@ -27,7 +27,7 @@ spreadsheet. In this lab you build that person a robot — twice.
 
 **Part 1 — Exploration** happens entirely in the Mistral Console UI: you prompt
 a model in the Playground, force its output into clean JSON, deploy it as an
-agent your whole org can use in Le Chat, watch live traffic, and set up an
+agent your whole org can use in Vibe, watch live traffic, and set up an
 LLM-as-a-judge to score extractions. Zero code.
 
 **Part 2 — Automation** turns that manual agent into a durable pipeline with
@@ -51,7 +51,7 @@ you the whole lab.
 ### What You'll Learn
 
 - Constrain LLM output to a strict JSON schema in the Playground
-- Deploy an agent to Le Chat for org-wide access
+- Deploy an agent to Vibe for org-wide access
 - Monitor live traffic, build datasets, and score extractions with LLM-as-a-judge
 - Define durable workflows and activities with `mistralai.workflows`
 - Extract structured JSON from document images with OCR plus chat completions
@@ -67,7 +67,7 @@ you the whole lab.
 
 ### What You'll Build
 
-Part 1: a deployed `invoice-extractor-v1` agent answering in Le Chat.
+Part 1: a deployed `invoice-extractor-v1` agent answering in Vibe.
 Part 2: the pipeline below — four activities, one human gate, wired end to end.
 
 ![Invoice processing pipeline](assets/invoice-pipeline.svg)
@@ -135,7 +135,7 @@ Re-run the same email. Now the reply is a predictable, database-ready object:
 ### Deploy the Agent
 
 1. Click **Create Agent** (top right), name it `invoice-extractor-v1`.
-2. Choose **Deploy to Le Chat**, then **Open in Le Chat**.
+2. Choose **Deploy to Vibe**, then **Open in Vibe**.
 3. Test it with a second invoice, no code involved:
 
 ```
@@ -146,7 +146,7 @@ Your agent is live and usable across your organization. See
 [Agents in AI Studio](https://docs.mistral.ai/studio/agents/introduction) for
 the full feature set.
 
-**Checkpoint:** Le Chat replies with structured JSON from your deployed agent.
+**Checkpoint:** Vibe replies with structured JSON from your deployed agent.
 
 ### Watch and Judge
 
@@ -404,7 +404,7 @@ Part 1 deployed a chat agent. Publish the automated pipeline the same way:
    your `OCR Invoice Workflow Test` is there with its executions, timeline,
    and pending-input events.
 2. Click **Publish** → **Assist**.
-3. Open [Le Chat](https://chat.mistral.ai/), find your workflow under
+3. Open [Vibe](https://vibe.mistral.ai/), find your workflow under
    assistants, and send it an invoice document.
 
 The workflow appears as a conversational assistant: it streams TodoList
@@ -425,8 +425,8 @@ invoice end to end.
 - **`Input should be a valid dictionary`** when signaling — the signal `input`
   must be a plain dict, not a pydantic model.
 - **`401` / `Unauthorized`** — check `MISTRAL_API_KEY` in `.env`.
-- **Agent not visible in Le Chat** — in the Console, check the agent's
-  deployment status under **Agents**; deploying to Le Chat can take a minute.
+- **Agent not visible in Vibe** — in the Console, check the agent's
+  deployment status under **Agents**; deploying to Vibe can take a minute.
 
 ## Conclusion and Resources
 

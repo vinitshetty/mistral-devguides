@@ -178,7 +178,7 @@ Key usability decisions worth copying:
 ### 5.1 Concept
 
 A hands-on tutorial library at `mistral.ai/developers/guides` where anyone can learn to **build with
-Mistral AI** — La Plateforme APIs, Agents, open-weight models, and deployments — by completing
+Mistral AI** — Mistral APIs, Agents, open-weight models, and deployments — by completing
 runnable, end-to-end guides that produce a working artifact.
 
 ### 5.2 Objective
@@ -205,7 +205,7 @@ Developers hub (mistral.ai/developers)
 
 - **Content type:** Quickstart · Community Guide · Partner Guide · Mistral-Certified · Reference Architecture
 - **Product category:**
-  - La Plateforme (Chat Completions API, OCR, Embeddings, Moderation, Batch)
+  - Mistral API (Chat Completions, OCR, Embeddings, Moderation, Batch)
   - Agents (Agent Builder, Agents API, tools/function calling, MCP)
   - Le Chat & productivity (Le Chat, Deep Research, Canvas, connectors)
   - Open-weight models (Mistral Large/Medium/Small, Ministra, Codestral, Devstral, Mathstral,
@@ -224,7 +224,7 @@ Developers hub (mistral.ai/developers)
 2. Your First Mistral Agent (Agent Builder + Agents API, tools, memory)
 3. Function Calling for Reliable Structured Output (JSON schema, validation)
 4. Building a RAG Chatbot with Mistral Embeddings + OCR (PDF ingestion to answer)
-5. Fine-tuning Mistral Small for Domain Tasks via La Plateforme
+5. Fine-tuning Mistral Small for Domain Tasks via the Mistral Console
 6. Self-Hosting Mistral Small with vLLM on a Single GPU
 7. Code Generation with Codestral in Your IDE (plugins + API)
 8. Agentic Coding with Devstral in a Terminal Sandbox
@@ -248,7 +248,7 @@ authors: Full Name (github-login)
 summary: One sentence for the catalog card.
 feedback link: https://github.com/mistralai/devguides/issues
 fork repo link: <guide's code repo>
-platform link: <deep link into La Plateforme console>
+platform link: <deep link into the Mistral Console>
 ---
 
 ## Overview
@@ -270,7 +270,7 @@ platform link: <deep link into La Plateforme console>
 - CI on PR: metadata schema validation (id/filename/folder match, taxonomy codes from a controlled
   list, language code), Markdown lint, image size checks, code-block language tags.
 - Bot posts a **preview URL** on each PR; DevRel review; merge → auto-deploy within the hour.
-- Every guide auto-gets a **"Fork Repo"** button and an **"Open in La Plateforme"** deep link.
+- Every guide auto-gets a **"Fork Repo"** button and an **"Open in Mistral Console"** deep link.
 - Issues-based reader feedback; stale guides are updated, not archived.
 
 ### 5.6 Usability targets (acceptance criteria)
@@ -369,7 +369,7 @@ Metadata / catalog card        title, 1-line summary, time estimate, tags
 ### 6.4 Worked example — "Build Your First Mistral Agent"
 
 ```
-Metadata: quickstart · La Plateforme · Agents · 45 min · en
+Metadata: quickstart · Mistral API · Agents · 45 min · en
 ## Overview
 ### Prerequisites      — Python 3.10+, a Mistral account (free tier works)
 ### What You'll Learn  — create an agent, attach tools, run a multi-turn task,
@@ -388,3 +388,62 @@ Metadata: quickstart · La Plateforme · Agents · 45 min · en
 ### Next Steps        — RAG guide, function-calling guide, MCP guide
 ### Related Resources — Agents API docs, cookbook repo, model page
 ```
+
+---
+
+## 7. House Style & Authoring Preferences
+
+> Conventions agreed while producing the first guide ("The Invoice Automation Lab").
+> These apply to every guide in this repo, alongside the template in section 5.4
+> and the content flow in section 6.
+
+### 7.1 Terminology
+
+- Say **Mistral Console** (console.mistral.ai). Never "La Plateforme" — retired brand.
+- Current naming: **Mistral API** (the HTTP API), **AI Studio** (the console workbench),
+  **Le Chat** (the chat product).
+- Front-matter taxonomy follows the same rule — e.g. `Mistral API > OCR`, never
+  `La Plateforme > ...`.
+
+### 7.2 Tone and length
+
+- Concise beats complete. Target **1,500–2,000 words** for a single-session lab;
+  if a paragraph can be one sentence, make it one sentence.
+- Checkpoints are single sentences.
+- Guides may be playful in framing (labs, challenges, crash tests) but never wordy.
+
+### 7.3 Visuals
+
+- A guide earns visuals only when they show something the reader will see on
+  their own screen (real product UI) or explain structure (diagrams).
+- **Never embed screenshots of documentation pages** — link to them instead.
+- Architecture/flow diagrams (SVG, flat `assets/` folder) are the preferred visual.
+
+### 7.4 Links
+
+- Verify every external link returns HTTP 200 before publishing.
+- docs.mistral.ai slugs use **underscores**: `your_first_workflow`, `core_concepts`,
+  `cookbook_examples`, `waiting_for_conditions`. Never guess a slug from a title —
+  pull it from `https://docs.mistral.ai/sitemap.xml`.
+
+### 7.5 Toolchain notes (mistralai-workflows 3.15)
+
+- SDK: `uv add mistralai-workflows` → `import mistralai.workflows as workflows`;
+  requires Python >= 3.12.
+- The `mistralai` client is a PEP 420 namespace package:
+  `from mistralai.client import Mistral` (not `from mistralai import Mistral`).
+- Executions are triggered/controlled through `Mistral().workflows` and
+  `.workflows.executions` client groups; the standalone `WorkflowsClient` is gone.
+- Signal `input` must be a plain dict, not a pydantic model.
+- Activity-only imports must sit inside `with workflow.unsafe.imports_passed_through():`
+  or worker registration fails sandbox determinism validation.
+- Workers require `DEPLOYMENT_NAME` in the environment; it doubles as the task queue.
+
+### 7.6 Production workflow for guides
+
+1. Draft in `<id>/index.md` + `assets/` per sections 5.4 and 6.2.
+2. **Live-test every command and code block**; paste real outputs, never invented ones.
+3. Review with the author in chat, revise, then commit and push to GitHub for
+   final review on the platform.
+4. Before making anything public, scan git history for secrets
+   (API keys live only in gitignored `.env` files).

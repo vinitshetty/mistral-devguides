@@ -461,5 +461,8 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
   build** on errors; unknown categories never reach the catalog.
 - Adding a guide = copy `_template/`, fill in front matter, push to `main`.
   The catalog picks it up automatically. Never hand-edit `docs/guides.json`.
+- Runnable code lives in **one repo per guide** (e.g.
+  `vinitshetty/invoice-automation`), linked via the front-matter
+  `fork repo link` — the content repo holds only guide Markdown and assets.
 - Guide pages render their `index.md` live from the repo at view time, so
   content is always current even between catalog builds.

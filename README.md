@@ -48,7 +48,6 @@ taxonomy, change `scripts/build_index.py` and `docs/assets/site.js` together.
 my-guide/
   index.md      the guide (front matter + Markdown)
   assets/       images and diagrams
-  code/         optional: bundled runnable code for the guide
 _template/      starter for new guides (ignored by the build)
 scripts/build_index.py   validates guides, generates docs/guides.json
 docs/          GitHub Pages site (catalog + reader)
@@ -56,9 +55,10 @@ docs/          GitHub Pages site (catalog + reader)
 project.md     platform blueprint and house style
 ```
 
-Guides that ship runnable code keep it in `code/` inside the guide folder, so
-one fork gets the reader both the tutorial and a working project. Point all
-commands in the guide at that folder.
+Guides with runnable code keep the code in its **own repository** (one repo
+per guide, e.g. [invoice-automation](https://github.com/vinitshetty/invoice-automation))
+and link it via the front-matter `fork repo link`. The content repo stays
+light; a fork of the code repo gives readers a clean working project.
 
 ## Local preview
 

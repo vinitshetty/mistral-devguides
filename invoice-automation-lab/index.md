@@ -12,7 +12,7 @@ status: Published
 authors: Vinit Shetty (vinitshetty)
 summary: Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.
 feedback link: https://github.com/vinitshetty/mistral-devguides/issues
-fork repo link: https://github.com/vinitshetty/mistral-devguides/tree/main/invoice-automation-lab
+fork repo link: https://github.com/vinitshetty/invoice-automation
 platform link: https://console.mistral.ai/
 estimated_time: 60 minutes
 level: Beginner
@@ -37,8 +37,10 @@ photos, a chat model extracts typed JSON, and anything over $3,000 **pauses for
 human approval**. Then — the fun part — you kill the pipeline mid-run and watch
 it resume exactly where it left off.
 
-Everything (guide, code, sample invoices) lives in one repo, so a fork gets
-you the whole lab.
+The guide lives in the [devguides repo](https://github.com/vinitshetty/mistral-devguides);
+the runnable lab — code, 18 sample invoices, lockfile — lives in its own repo,
+[vinitshetty/invoice-automation](https://github.com/vinitshetty/invoice-automation),
+so one fork gets you a clean working project.
 
 > Every command is copy-paste runnable, and every phase ends with a checkpoint.
 > Do not skip the crash test.
@@ -185,12 +187,11 @@ is the reference.
 
 ### Set Up the Lab
 
-Clone the repo (it contains this guide, the code, and 18 sample invoices) and
-install dependencies:
+Clone the lab repo (code + 18 sample invoices) and install dependencies:
 
 ```bash
-git clone https://github.com/vinitshetty/mistral-devguides.git
-cd mistral-devguides/invoice-automation-lab/code
+git clone https://github.com/vinitshetty/invoice-automation.git
+cd invoice-automation
 uv sync
 cp .env.example .env
 # open .env and set MISTRAL_API_KEY=<your key>
@@ -467,4 +468,4 @@ by changing one folder path.
 - [Observability and evaluations](https://docs.mistral.ai/studio/observability)
 - [Document processing overview](https://docs.mistral.ai/studio/document-processing/overview)
 - [mistralai-workflows on PyPI](https://pypi.org/project/mistralai-workflows/)
-- [Lab repository — fork it](https://github.com/vinitshetty/mistral-devguides/tree/main/invoice-automation-lab)
+- [Lab repository — fork it](https://github.com/vinitshetty/invoice-automation)

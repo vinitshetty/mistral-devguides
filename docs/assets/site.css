@@ -185,10 +185,13 @@ img { max-width: 100%; }
 }
 .rail nav a:hover { color: var(--text); }
 .rail nav a.active { color: var(--text); border-left-color: #111; font-weight: 600; }
-.rail nav a.sub { padding-left: 26px; font-size: 12.5px; color: var(--text-faint); }
+.rail nav .toc-group > a { font-weight: 600; }
+.rail nav .toc-children { display: none; }
+.rail nav .toc-group.open .toc-children { display: block; }
+.rail nav a.sub { padding-left: 26px; font-size: 12.5px; color: var(--text-faint); font-weight: 400; }
 .rail nav a.sub:hover { color: var(--text-muted); }
 .rail nav a.sub.active { color: var(--text); }
-.rail-cta { margin-top: 28px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.rail-cta { margin-top: 22px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
 .rail-cta p { margin: 0 0 10px; color: var(--text-muted); font-size: 13px; }
 
 .guide-head { margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }

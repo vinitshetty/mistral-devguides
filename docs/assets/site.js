@@ -363,30 +363,54 @@ async function initReader() {
     if (p.textContent.trim().startsWith("Checkpoint:")) p.classList.add("checkpoint");
   });
 
-  /* build TOC from H2s and H3s */
+  /* build a collapsible TOC: H2 groups always visible, H3 steps expand
+     only for the active section so the rail fits one viewport */
   const heads = [...content.querySelectorAll("h2, h3")];
+  const groups = [];
+  let kids = null;
   heads.forEach((h, i) => {
     h.id = h.id || "sec-" + i;
     const a = document.createElement("a");
     a.href = "#" + h.id;
     a.textContent = h.textContent;
-    if (h.tagName === "H3") a.classList.add("sub");
-    toc.appendChild(a);
+    if (h.tagName === "H3") {
+      a.classList.add("sub");
+      kids.appendChild(a);
+    } else {
+      const group = document.createElement("div");
+      group.className = "toc-group";
+      group.appendChild(a);
+      kids = document.createElement("div");
+      kids.className = "toc-children";
+      group.appendChild(kids);
+      toc.appendChild(group);
+      groups.push({ head: h, group });
+    }
   });
   if (heads.length === 0) toc.parentNode.style.display = "none";
 
   const links = [...toc.querySelectorAll("a")];
+  const groupOf = new Map();
+  let current = null;
+  for (const h of heads) {
+    if (h.tagName === "H2") current = h;
+    else groupOf.set(h, current);
+  }
   const observer = new IntersectionObserver(
     (entries) => {
       for (const en of entries) {
-        if (en.isIntersecting) {
-          links.forEach((a) => a.classList.toggle("active", a.href === "#" + en.target.id));
-        }
+        if (!en.isIntersecting) continue;
+        const h2 = en.target.tagName === "H3" ? groupOf.get(en.target) : en.target;
+        groups.forEach((g) => g.group.classList.toggle("open", g.head === h2));
+        links.forEach((a) =>
+          a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id)
+        );
       }
     },
     { rootMargin: "-20% 0px -70% 0px" }
   );
   heads.forEach((h) => observer.observe(h));
+  if (groups.length) groups[0].group.classList.add("open");
 
   /* copy buttons on code blocks */
   content.querySelectorAll("pre").forEach((pre) => {

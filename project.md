@@ -466,3 +466,11 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
   `fork repo link` — the content repo holds only guide Markdown and assets.
 - Guide pages render their `index.md` live from the repo at view time, so
   content is always current even between catalog builds.
+
+### 7.8 Reader ergonomics
+
+- The "On this page" rail must fit **one viewport without scrolling**:
+  part-level entries (H2) are always visible, step-level entries (H3) are
+  collapsible and auto-expand only for the active section.
+- Applies to every guide the site renders; long guides earn a collapsible
+  rail, never a scrolling one.

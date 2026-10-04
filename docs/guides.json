@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-04T15:47:53+00:00",
+  "generated_at": "2026-10-04T15:48:13+00:00",
   "count": 1,
   "guides": [
     {
@@ -30,7 +30,7 @@
       "platform": "https://console.mistral.ai/",
       "language": "en",
       "art": "invoice-automation-lab/assets/invoice-pipeline.svg",
-      "updated": "2026-10-03"
+      "updated": "2026-10-04"
     }
   ]
 }

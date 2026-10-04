@@ -152,7 +152,9 @@ def build_guide_entry(guide_id: str, meta: dict, body: str) -> dict:
         "categories": cats,
         "contentType": next((c for c in cats if c in CONTENT_TYPES), "Quickstart"),
         "industries": [c for c in cats if c in INDUSTRIES],
-        "products": [c.split(">")[0].strip() for c in cats if c.split(">")[0].strip() in PRODUCT_CATEGORIES],
+        "products": list(dict.fromkeys(
+            c.split(">")[0].strip() for c in cats if c.split(">")[0].strip() in PRODUCT_CATEGORIES
+        )),
         "level": meta.get("level", ""),
         "time": meta.get("estimated_time", ""),
         "authors": meta.get("authors", ""),

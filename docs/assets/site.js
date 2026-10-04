@@ -363,13 +363,14 @@ async function initReader() {
     if (p.textContent.trim().startsWith("Checkpoint:")) p.classList.add("checkpoint");
   });
 
-  /* build TOC from H2s */
-  const heads = [...content.querySelectorAll("h2")];
+  /* build TOC from H2s and H3s */
+  const heads = [...content.querySelectorAll("h2, h3")];
   heads.forEach((h, i) => {
-    h.id = h.id || "step-" + i;
+    h.id = h.id || "sec-" + i;
     const a = document.createElement("a");
     a.href = "#" + h.id;
     a.textContent = h.textContent;
+    if (h.tagName === "H3") a.classList.add("sub");
     toc.appendChild(a);
   });
   if (heads.length === 0) toc.parentNode.style.display = "none";

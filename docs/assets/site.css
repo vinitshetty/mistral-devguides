@@ -193,6 +193,9 @@ img { max-width: 100%; }
 }
 .rail nav a:hover { color: var(--text); text-decoration: none; }
 .rail nav a.active { color: var(--accent); border-left-color: var(--accent); }
+.rail nav a.sub { padding-left: 26px; font-size: 12.5px; color: var(--text-faint); }
+.rail nav a.sub:hover { color: var(--text-muted); }
+.rail nav a.sub.active { color: var(--accent); }
 .rail-cta { margin-top: 28px; padding: 16px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); }
 .rail-cta p { margin: 0 0 10px; color: var(--text-muted); font-size: 13px; }
 

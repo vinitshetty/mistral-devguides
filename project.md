@@ -411,6 +411,9 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
   if a paragraph can be one sentence, make it one sentence.
 - Checkpoints are single sentences.
 - Guides may be playful in framing (labs, challenges, crash tests) but never wordy.
+- Longer guides split into **Part sections** (`## Part 1 — ...`, `## Part 2 — ...`)
+  with verb-first H3 steps inside — one guide, one repo, one flow
+  (see "The Invoice Automation Lab" for the Exploration/Automation pattern).
 
 ### 7.3 Visuals
 

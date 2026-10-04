@@ -3,35 +3,42 @@ id: invoice-automation-lab
 language: en
 categories:
   - Quickstart
+  - AI Studio > Playground
   - AI Studio > Workflows
   - Mistral API > OCR
+  - Le Chat > Assistants
   - Financial Services
 status: Published
 authors: Vinit Shetty (vinitshetty)
-summary: Build a payables robot that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.
+summary: Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.
 feedback link: https://github.com/vinitshetty/mistral-devguides/issues
-fork repo link: https://github.com/vinitshetty/mistral-ai-studio-quickstart
+fork repo link: https://github.com/vinitshetty/mistral-devguides
 platform link: https://console.mistral.ai/
-estimated_time: 45 minutes
+estimated_time: 60 minutes
 level: Beginner
 ---
 
-# The Invoice Automation Lab: Build a Payables Robot with Mistral Workflows
+# The Invoice Automation Lab: Explore, Then Automate
 
 ## Overview
 
 Every company has someone who stares at invoice photos and types numbers into a
-spreadsheet. In this lab you build that person a robot: a durable pipeline that
-reads 18 real invoice photos with **Mistral OCR**, extracts **typed JSON**
-(invoice number, date, amount, supplier, bank details, spend category), enriches
-each record with CRM data, and **pauses for human approval** on anything over
-$3,000. Then — the fun part — you kill it mid-run and watch it resume exactly
-where it left off.
+spreadsheet. In this lab you build that person a robot — twice.
 
-Everything runs on the [`mistralai-workflows`](https://pypi.org/project/mistralai-workflows/)
-SDK (`import mistralai.workflows as workflows`). Mistral's managed Temporal
-engine checkpoints every step: failures trigger retries, and pipelines can
-pause and resume without losing state.
+**Part 1 — Exploration** happens entirely in the Mistral Console UI: you prompt
+a model in the Playground, force its output into clean JSON, deploy it as an
+agent your whole org can use in Le Chat, watch live traffic, and set up an
+LLM-as-a-judge to score extractions. Zero code.
+
+**Part 2 — Automation** turns that manual agent into a durable pipeline with
+the [`mistralai-workflows`](https://pypi.org/project/mistralai-workflows/) SDK
+(`import mistralai.workflows as workflows`): Mistral OCR reads 18 real invoice
+photos, a chat model extracts typed JSON, and anything over $3,000 **pauses for
+human approval**. Then — the fun part — you kill the pipeline mid-run and watch
+it resume exactly where it left off.
+
+Everything (guide, code, sample invoices) lives in one repo, so a fork gets
+you the whole lab.
 
 > Every command is copy-paste runnable, and every phase ends with a checkpoint.
 > Do not skip the crash test.
@@ -43,33 +50,147 @@ pause and resume without losing state.
 
 ### What You'll Learn
 
+- Constrain LLM output to a strict JSON schema in the Playground
+- Deploy an agent to Le Chat for org-wide access
+- Monitor live traffic, build datasets, and score extractions with LLM-as-a-judge
 - Define durable workflows and activities with `mistralai.workflows`
 - Extract structured JSON from document images with OCR plus chat completions
 - Pause a workflow for human approval and resume it with a **signal**
-- Trigger, poll, and signal executions from the Mistral Python client
 - Crash a pipeline mid-run and resume it without losing work
-- Publish the workflow to **Le Chat** as an assistant
 
 ### What You'll Need
 
 - An API key from the [Mistral Console](https://console.mistral.ai/)
   (**API Keys** → *Create new key* — shown only once, copy it now)
 - ~200 MB of disk for the Python environment
-- The lab processes a handful of invoices; costs pennies, fits in trial credit
+- Costs pennies across the whole lab; fits in trial credit
 
 ### What You'll Build
 
+Part 1: a deployed `invoice-extractor-v1` agent answering in Le Chat.
+Part 2: the pipeline below — four activities, one human gate, wired end to end.
+
 ![Invoice processing pipeline](assets/invoice-pipeline.svg)
 
-Four activities, one human gate, wired end to end. The finished artifact is a
-forkable repo you can point at any document folder — plus, optionally, a Le
-Chat assistant your whole organization can invoke.
+## Part 1 — Exploration
 
-## Set Up Your Lab
+### Prompt in the Playground
+
+**Navigate to:** Mistral Console » **Playground**. Paste this sample vendor email:
+
+```
+Hey there! Hope you're doing well. Just sending over the bill for last week's
+catering from Downtown Delights. It came out to $452.10. Let me know when
+you've sent the wire!
+```
+
+Send the prompt:
+
+```
+Help me process this invoice email.
+```
+
+You get a conversational, inconsistent reply — fine for a human, useless for
+automation. The next step fixes that.
+
+### Constrain the Output
+
+Open the **Instructions** panel and paste:
+
+```
+Act as a specialized data extraction assistant.
+
+Your task is to process the following email text and extract the
+'supplier_name' and the 'total_amount'.
+
+Rules:
+1. Extract 'supplier_name' as a string.
+2. Extract 'total_amount' as a float (number only, remove currency symbols).
+3. If information is missing, use null.
+4. Output the result strictly in JSON format with the two fields
+'supplier_name' and 'total_amount'. Don't add a "properties" field.
+```
+
+Open **Response Format**, switch to JSON mode, and define this schema:
+
+```json
+{
+  "type": "object",
+  "required": ["supplier_name", "total_amount"],
+  "properties": {
+    "supplier_name": { "type": "string" },
+    "total_amount": { "type": "number" }
+  }
+}
+```
+
+Re-run the same email. Now the reply is a predictable, database-ready object:
+
+```json
+{ "supplier_name": "Downtown Delights", "total_amount": 452.10 }
+```
+
+**Checkpoint:** the same prompt now returns the same shape every single time.
+
+### Deploy the Agent
+
+1. Click **Create Agent** (top right), name it `invoice-extractor-v1`.
+2. Choose **Deploy to Le Chat**, then **Open in Le Chat**.
+3. Test it with a second invoice, no code involved:
+
+```
+Hey, this is "Boulangerie de Paris", you owe me 5€ for the croissants
+```
+
+Your agent is live and usable across your organization. See
+[Agents in AI Studio](https://docs.mistral.ai/studio/agents/introduction) for
+the full feature set.
+
+**Checkpoint:** Le Chat replies with structured JSON from your deployed agent.
+
+### Watch and Judge
+
+- **Navigate to:** AI Studio » **Observe** » **Explorer**. Every interaction
+  your agent handled is here. Select the two successful invoice interactions
+  and click **Add to Dataset** → `my_invoices_dataset`. This is your ground truth.
+- **Navigate to:** **Evaluate** » **Create Judge**. Set **Source** to the
+  dataset and define binary criteria:
+
+```
+Correct: The extraction of 'total_amount' and 'supplier_name' was correct.
+Incorrect: The extraction of 'total_amount' or 'supplier_name' was not correct.
+```
+
+Click **Try It** — the judge scores every dataset row pass/fail. You now have
+the full improvement loop: label data → judge → refine the agent → re-evaluate.
+The [observability docs](https://docs.mistral.ai/studio/observability) cover
+datasets, evaluators, and evaluation runs.
+
+**Checkpoint:** the judge runs against your dataset and produces a score per row.
+
+### Read a Real Invoice
+
+The agent handles email text. Real invoices are photos. **Navigate to:**
+AI Studio » **Document AI**, upload `batch1-1472.jpg` from the lab repo (or any
+invoice image), and inspect the structured extraction — OCR, layout, and
+multi-page handling with no preprocessing.
+
+You have now seen every ingredient manually. Time to wire them into a pipeline
+that runs itself. The [Document AI overview](https://docs.mistral.ai/studio/document-processing/overview)
+is the reference.
+
+**Checkpoint:** an invoice photo becomes structured key-values in the console.
+
+## Part 2 — Automation
+
+### Set Up the Lab
+
+Clone the repo (it contains this guide, the code, and 18 sample invoices) and
+install dependencies:
 
 ```bash
-git clone https://github.com/vinitshetty/mistral-ai-studio-quickstart.git
-cd mistral-ai-studio-quickstart
+git clone https://github.com/vinitshetty/mistral-devguides.git
+cd mistral-devguides/invoice-automation-lab/code
 uv sync
 cp .env.example .env
 # open .env and set MISTRAL_API_KEY=<your key>
@@ -90,10 +211,10 @@ uv run python -c "import mistralai.workflows; print('Workflows is installed succ
 
 **Checkpoint:** the command prints `Workflows is installed successfully!`
 
-## Extract Your First Invoice
+### Extract Your First Invoice
 
-Prove the magic works before touching workers or queues. This script calls two
-activities directly — OCR, then extraction — on the first invoice photo:
+Prove the pipeline works before touching workers or queues. This script calls
+two activities directly — OCR, then extraction — on the first invoice photo:
 
 ```bash
 uv run --frozen python workflows/utils/test.py
@@ -108,13 +229,12 @@ ITEMS
 |  No. | Description | Qty | UM | Net price | Net worth | VAT [%] | Gross worth  |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 |  1. | EU Blichmann Riptide Brewing Pump - Hombrew Beer Wine ...
-
 Structured Output result: invoice_number='97833274' date='2014-03-09'
 total_amount=440.0 bank_details='GB88PASK22658399910069'
 supplier='Baker, Pearson and Perry' invoice_category='raw_materials'
 ```
 
-Two things happened, both defined in `workflows/workflow/worker.py`:
+Both activities live in `workflows/workflow/worker.py`:
 
 - `process_document_ocr` base64-encodes the photo and calls
   `mistral-ocr-latest`, which returns markdown per page — it even recovered the
@@ -127,7 +247,7 @@ Two things happened, both defined in `workflows/workflow/worker.py`:
 **Checkpoint:** a photo became six typed fields — including the supplier's
 bank account — in under ten minutes.
 
-## Start the Worker
+### Start the Worker
 
 A **worker** connects outbound to Mistral and pulls work from a task queue;
 your workflow runs nowhere until one is live:
@@ -151,7 +271,7 @@ and work resumes — you will exploit this shortly.
 
 **Checkpoint:** the `Registered activities` line lists your four activities.
 
-## Run the Full Pipeline
+### Run the Full Pipeline
 
 In a second terminal, process a single invoice:
 
@@ -198,7 +318,7 @@ problem.
 
 **Checkpoint:** your summary shows a supplier, an amount, and `Decision: APPROVED`.
 
-## Play Approving Manager
+### Play Approving Manager
 
 Run the big invoice:
 
@@ -241,12 +361,9 @@ The paused workflow wakes, reads the decision, and finishes:
 - Required approval: True
 ```
 
-Signals are a general primitive — see the
-[signals reference](https://docs.mistral.ai/studio/workflows/interacting-with-workflows/signals).
-
 **Checkpoint:** an invoice above $3,000 cannot complete until a human says so.
 
-## Crash It On Purpose
+### Crash It On Purpose
 
 The signature move. `run_w_resume.py` processes all 18 invoices with
 **deterministic execution IDs** (`invoice-<name>-<run-id>`):
@@ -271,18 +388,17 @@ Expected output on the second pass:
 [batch1-1479.jpg] Previous run ended with status=FAILED, re-executing...
 ```
 
-Nothing is re-OCR'd from scratch. The Temporal engine holds the workflow's
-state server-side — which is why "just restart it" is a valid production
-strategy for this pipeline.
+Nothing is re-OCR'd from scratch. Mistral's managed Temporal engine holds the
+workflow's state server-side — which is why "just restart it" is a valid
+production strategy for this pipeline.
 
 > Use the same run ID to resume; a new ID reprocesses everything.
 
 **Checkpoint:** the second run skips everything the first run finished.
 
-## Publish to Le Chat
+### Publish the Workflow
 
-You have been approving invoices from a terminal. Give everyone else a chat
-button instead:
+Part 1 deployed a chat agent. Publish the automated pipeline the same way:
 
 1. Open the [Mistral Console](https://console.mistral.ai/) » **Workflows** —
    your `OCR Invoice Workflow Test` is there with its executions, timeline,
@@ -309,30 +425,33 @@ invoice end to end.
 - **`Input should be a valid dictionary`** when signaling — the signal `input`
   must be a plain dict, not a pydantic model.
 - **`401` / `Unauthorized`** — check `MISTRAL_API_KEY` in `.env`.
+- **Agent not visible in Le Chat** — in the Console, check the agent's
+  deployment status under **Agents**; deploying to Le Chat can take a minute.
 
 ## Conclusion and Resources
 
 ### What You Learned
 
-You defined a durable workflow with four activities, turned document photos
-into typed records with OCR plus a strict JSON schema, gated expensive
-invoices behind a human signal, drove executions from the Mistral Python
-client, proved crash-resilience with deterministic execution IDs, and
-published the workflow to Le Chat.
+You constrained LLM output with a strict JSON schema, deployed an agent to Le
+Chat, built an evaluation loop with datasets and an LLM judge, and read
+invoice photos with Document AI. Then you turned that manual setup into a
+durable workflow: four activities, OCR-to-typed-records, a human approval
+signal gate, crash-resumable batches, and an org-wide chat interface.
 
 ### What You Accomplished
 
-A payables robot: 18 invoice photos in, structured records out, human approval
-for anything over $3,000, durable execution that shrugs off worker crashes,
-and an org-wide chat interface. Point it at your own documents by changing
-one folder path.
+One repo, one payables robot. Part 1 proved each ingredient by hand in the
+console; Part 2 wired them into a pipeline that runs itself — 18 invoice
+photos in, structured records out, human approval for anything over $3,000,
+and durability that shrugs off worker crashes. Point it at your own documents
+by changing one folder path.
 
 ### Next Steps
 
 - Swap the simulated CRM activity for a real one — or an MCP server via the
   [connectors plugin](https://docs.mistral.ai/studio/workflows/building-workflows/connectors)
 - Give the robot a [schedule](https://docs.mistral.ai/studio/workflows/building-workflows/scheduling)
-- Add LLM-as-a-judge evaluation of extractions with the
+- Feed the judge into CI with the
   [evaluations toolkit](https://docs.mistral.ai/studio/observability/evaluations/evaluators)
 - Go deeper with [core concepts](https://docs.mistral.ai/studio/workflows/getting-started/core_concepts)
 
@@ -343,6 +462,9 @@ one folder path.
 - [Workflows cookbook examples](https://docs.mistral.ai/studio/workflows/getting-started/cookbook_examples)
 - [Waiting for conditions](https://docs.mistral.ai/studio/workflows/building-workflows/waiting_for_conditions)
 - [Deployments in production](https://docs.mistral.ai/studio/workflows/managing-workflows-in-production/deployments)
+- [Agents in AI Studio](https://docs.mistral.ai/studio/agents/introduction)
+- [Structured output](https://docs.mistral.ai/studio/conversations/structured-output)
+- [Observability and evaluations](https://docs.mistral.ai/studio/observability)
 - [Document processing overview](https://docs.mistral.ai/studio/document-processing/overview)
 - [mistralai-workflows on PyPI](https://pypi.org/project/mistralai-workflows/)
-- [Lab repository — fork it](https://github.com/vinitshetty/mistral-ai-studio-quickstart)
+- [Lab repository — fork it](https://github.com/vinitshetty/mistral-devguides)

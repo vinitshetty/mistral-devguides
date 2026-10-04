@@ -474,3 +474,6 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
   collapsible and auto-expand only for the active section.
 - Applies to every guide the site renders; long guides earn a collapsible
   rail, never a scrolling one.
+- Bump the `?v=` query on `site.css`/`site.js` references in `docs/*.html`
+  whenever those assets change, so browsers never render a mix of old and
+  new assets.

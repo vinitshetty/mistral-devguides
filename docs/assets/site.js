@@ -372,6 +372,7 @@ async function initReader() {
     h.id = h.id || "sec-" + i;
     const a = document.createElement("a");
     a.href = "#" + h.id;
+    a.title = h.textContent;
     a.textContent = h.textContent;
     if (h.tagName === "H3") {
       a.classList.add("sub");

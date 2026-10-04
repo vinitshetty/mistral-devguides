@@ -180,8 +180,10 @@ img { max-width: 100%; }
 .rail h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: 0.14em; color: var(--text-faint); text-transform: uppercase; }
 .rail nav { display: flex; flex-direction: column; border-left: 1px solid var(--border-strong); }
 .rail nav a {
+  display: block;
   color: var(--text-muted); padding: 5px 0 5px 14px; border-left: 2px solid transparent;
   margin-left: -1px; font-size: 13px; line-height: 1.4; text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rail nav a:hover { color: var(--text); }
 .rail nav a.active { color: var(--text); border-left-color: #111; font-weight: 600; }

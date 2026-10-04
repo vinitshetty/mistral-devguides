@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-10-04T15:25:54+00:00",
+  "count": 1,
+  "guides": [
+    {
+      "id": "invoice-automation-lab",
+      "title": "The Invoice Automation Lab: Build a Payables Robot with Mistral Workflows",
+      "summary": "Build a payables robot that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.",
+      "categories": [
+        "Quickstart",
+        "AI Studio > Workflows",
+        "Mistral API > OCR",
+        "Financial Services"
+      ],
+      "contentType": "Quickstart",
+      "industries": [
+        "Financial Services"
+      ],
+      "products": [
+        "AI Studio",
+        "Mistral API"
+      ],
+      "level": "Beginner",
+      "time": "45 minutes",
+      "authors": "Vinit Shetty (vinitshetty)",
+      "fork": "https://github.com/vinitshetty/mistral-ai-studio-quickstart",
+      "platform": "https://console.mistral.ai/",
+      "language": "en",
+      "art": "invoice-automation-lab/assets/invoice-pipeline.svg",
+      "updated": "2026-10-03"
+    }
+  ]
+}

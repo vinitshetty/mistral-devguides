@@ -477,3 +477,28 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
 - Bump the `?v=` query on `site.css`/`site.js` references in `docs/*.html`
   whenever those assets change, so browsers never render a mix of old and
   new assets.
+
+### 7.9 How the reader renders a guide (author facts)
+
+- **H2s** become the collapsible part groups in the "On this page" rail;
+  **H3s** become step entries inside them. Use Part H2s + verb-first H3 steps.
+- The **first `assets/` image** in the body becomes the catalog card art -
+  put the architecture diagram before any other image.
+- A paragraph starting with `Checkpoint:` is auto-styled as a callout -
+  keep it one sentence (see 7.2).
+- Front matter drives the UI: `fork repo link` -> Fork Repo button,
+  `platform link` -> console buttons, `estimated_time` and `level` ->
+  badges, `authors` -> byline. `summary` is the catalog card text.
+- Keep images in `assets/` with relative paths; the reader resolves them
+  against the repo automatically.
+
+### 7.10 Publishing lag and push hygiene
+
+- After a push, the reader may serve the previous markdown for up to
+  ~5 minutes (raw.githubusercontent.com caches for 300s) and Pages
+  redeploys within ~2 minutes. Do not debug "stale" content before then;
+  verify with a fresh fetch, not a previously open tab.
+- If a push is rejected as non-fast-forward, the CI bot has usually
+  committed a regenerated `guides.json` on the remote. Resolve with
+  `git pull --rebase origin main`, then push again. Never edit
+  `guides.json` by hand or force-push.

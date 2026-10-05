@@ -78,7 +78,11 @@ Part 2: the pipeline below — four activities, one human gate, wired end to end
 
 ### Prompt in the Playground
 
-**Navigate to:** Mistral Console » **Playground**. Paste this sample vendor email:
+**Navigate to:** Mistral Console » **Playground**.
+
+![AI Studio home with the Playground highlighted](assets/ai-studio-home.png)
+
+Paste this sample vendor email:
 
 ```
 Hey there! Hope you're doing well. Just sending over the bill for last week's
@@ -294,6 +298,8 @@ response = await client.workflows.wait_for_workflow_completion_async(execution_i
 Inside the workflow, the four activities run under a **TodoList** — a live
 progress widget you can watch streaming in AI Studio's execution timeline.
 
+![Execution timeline in AI Studio: OCR, extraction, enrichment](assets/studio-execution-timeline.png)
+
 $440 is under the threshold, so approval was skipped. Time for a more expensive
 problem.
 
@@ -387,6 +393,8 @@ Part 1 deployed a chat agent. Publish the automated pipeline the same way:
 2. Click **Publish to Vibe**.
 3. Open [Vibe](https://vibe.mistral.ai/), find your workflow under
    assistants, and send it an invoice document.
+
+![The workflow in AI Studio: executions and the publish action](assets/studio-workflow-executions.png)
 
 The workflow appears as a conversational assistant: it streams TodoList
 progress as it works, and a $9,556 invoice renders the approval form right in

@@ -51,9 +51,17 @@ my-guide/
 _template/      starter for new guides (ignored by the build)
 scripts/build_index.py   validates guides, generates docs/guides.json
 docs/          GitHub Pages site (catalog + reader)
+docs/guides/   generated static reader page per guide (SEO shell + sitemap)
+docs/sitemap.xml   generated sitemap for search engines
 .github/workflows/build-index.yml   CI pipeline
 project.md     platform blueprint and house style
 ```
+
+Guides are published at two URLs: the static `guides/<id>/` page (unique
+title, description and canonical - this is what search engines index and
+what the catalog links to) and the legacy `guide.html?id=<id>` reader, which
+keeps working for old links. Both are generated/discovered automatically;
+nothing changes in the authoring workflow.
 
 Guides with runnable code keep the code in its **own repository** (one repo
 per guide, e.g. [invoice-automation](https://github.com/vinitshetty/invoice-automation))

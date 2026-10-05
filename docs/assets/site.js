@@ -201,7 +201,7 @@ async function initCatalog() {
 
   function card(g) {
     const art = firstArt(g);
-    const link = "guide.html?id=" + encodeURIComponent(g.id);
+    const link = guideLink(g.id);
     const tags = [g.level, g.time].filter(Boolean)
       .map((t) => '<span class="tag">' + escapeHtml(t) + "</span>").join("");
     const date = g.updated ? '<span class="meta-item">' + escapeHtml(formatDate(g.updated)) + "</span>" : "";
@@ -230,7 +230,7 @@ async function initCatalog() {
     const hero = list[0];
     if (hero) {
       const art = firstArt(hero);
-      const link = "guide.html?id=" + encodeURIComponent(hero.id);
+      const link = guideLink(hero.id);
       featured.style.display = "";
       featured.innerHTML =
         '<a class="card-link" href="' + link + '" style="display:contents">' +
@@ -310,7 +310,7 @@ async function initCatalog() {
 
 async function initReader() {
   const params = new URLSearchParams(location.search);
-  const id = params.get("id");
+  const id = params.get("id") || document.body.dataset.guideId || "";
   const content = document.getElementById("content");
   const toc = document.getElementById("toc");
   const progress = document.getElementById("progress");
@@ -337,6 +337,8 @@ async function initReader() {
   );
 
   document.title = g.title + " - Mistral Developer Guides";
+  setMetaTag("description", g.summary);
+  setLinkTag("canonical", location.href);
   marked.setOptions({ gfm: true, breaks: false });
   content.innerHTML =
     '<div class="guide-head">' +
@@ -481,6 +483,32 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
+}
+
+function guideLink(id) {
+  return "guides/" + encodeURIComponent(id) + "/";
+}
+
+function setMetaTag(name, content) {
+  if (!content) return;
+  let el = document.querySelector('meta[name="' + name + '"]');
+  if (!el) {
+    el = document.createElement("meta");
+    el.name = name;
+    document.head.appendChild(el);
+  }
+  el.content = content;
+}
+
+function setLinkTag(rel, href) {
+  if (!href) return;
+  let el = document.querySelector('link[rel="' + rel + '"]');
+  if (!el) {
+    el = document.createElement("link");
+    el.rel = rel;
+    document.head.appendChild(el);
+  }
+  el.href = href;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

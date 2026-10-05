@@ -248,6 +248,25 @@ img { max-width: 100%; }
 }
 .checkpoint strong { color: var(--text); }
 
+/* compact screenshot previews with lightbox */
+.markdown-body figure.shot { margin: 24px 0; }
+.markdown-body figure.shot .shot-link { display: block; text-align: center; cursor: zoom-in; }
+.markdown-body figure.shot img {
+  display: inline-block; max-height: 190px; height: auto; width: auto; max-width: 100%;
+  margin: 0; border: 1px solid var(--border); border-radius: 6px;
+  transition: opacity 0.15s ease;
+}
+.markdown-body figure.shot .shot-link:hover img { opacity: 0.82; }
+.markdown-body figure.shot figcaption {
+  font-size: 12px; color: var(--text-faint); text-align: center; margin-top: 5px;
+}
+.lightbox {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0, 0, 0, 0.82);
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px; cursor: zoom-out;
+}
+.lightbox img { max-width: 100%; max-height: 100%; border-radius: 4px; background: #fff; }
+
 /* grayscale syntax highlighting */
 .hljs-comment, .hljs-quote { color: var(--text-faint); font-style: italic; }
 .hljs-keyword, .hljs-selector-tag, .hljs-literal { font-weight: 700; }

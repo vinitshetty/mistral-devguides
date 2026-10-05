@@ -363,6 +363,42 @@ async function initReader() {
     if (p.textContent.trim().startsWith("Checkpoint:")) p.classList.add("checkpoint");
   });
 
+  /* screenshots render as compact previews; click opens full size */
+  const openLightbox = (src, alt) => {
+    const lb = document.createElement("div");
+    lb.className = "lightbox";
+    lb.title = "Click anywhere or press Esc to close";
+    const full = document.createElement("img");
+    full.src = src;
+    full.alt = alt || "";
+    lb.appendChild(full);
+    const close = () => lb.remove();
+    lb.addEventListener("click", close);
+    document.addEventListener("keydown", function onEsc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onEsc); }
+    });
+    document.body.appendChild(lb);
+  };
+
+  content.querySelectorAll("img").forEach((img) => {
+    if (!/\.(png|jpe?g)$/i.test(img.getAttribute("src") || "")) return;
+    const figure = document.createElement("figure");
+    figure.className = "shot";
+    const link = document.createElement("a");
+    link.className = "shot-link";
+    link.href = img.src;
+    img.parentNode.insertBefore(figure, img);
+    link.appendChild(img);
+    figure.appendChild(link);
+    const cap = document.createElement("figcaption");
+    cap.textContent = (img.alt ? img.alt + " - " : "") + "click to enlarge";
+    figure.appendChild(cap);
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      openLightbox(img.src, img.alt);
+    });
+  });
+
   /* build a collapsible TOC: H2 groups always visible, H3 steps expand
      only for the active section so the rail fits one viewport */
   const heads = [...content.querySelectorAll("h2, h3")];

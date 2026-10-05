@@ -491,6 +491,9 @@ Metadata: quickstart · Mistral API · Agents · 45 min · en
   badges, `authors` -> byline. `summary` is the catalog card text.
 - Keep images in `assets/` with relative paths; the reader resolves them
   against the repo automatically.
+- **Screenshots (PNG/JPG) render as thin previews** (max ~190px tall, centered,
+  captioned) and open full-size in a lightbox on click - they must not bloat
+  the article flow. Diagrams (SVG) stay inline at full size.
 
 ### 7.10 Publishing lag and push hygiene
 

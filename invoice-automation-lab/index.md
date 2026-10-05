@@ -384,7 +384,7 @@ Part 1 deployed a chat agent. Publish the automated pipeline the same way:
 1. Open the [Mistral Console](https://console.mistral.ai/) » **Workflows** —
    your `OCR Invoice Workflow Test` is there with its executions, timeline,
    and pending-input events.
-2. Click **Publish** → **Assist**.
+2. Click **Publish to Vibe**.
 3. Open [Vibe](https://vibe.mistral.ai/), find your workflow under
    assistants, and send it an invoice document.
 

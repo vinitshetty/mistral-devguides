@@ -150,26 +150,6 @@ the full feature set.
 
 **Checkpoint:** Vibe replies with structured JSON from your deployed agent.
 
-### Watch and Judge
-
-- **Navigate to:** AI Studio » **Observe** » **Explorer**. Every interaction
-  your agent handled is here. Select the two successful invoice interactions
-  and click **Add to Dataset** → `my_invoices_dataset`. This is your ground truth.
-- **Navigate to:** **Evaluate** » **Create Judge**. Set **Source** to the
-  dataset and define binary criteria:
-
-```
-Correct: The extraction of 'total_amount' and 'supplier_name' was correct.
-Incorrect: The extraction of 'total_amount' or 'supplier_name' was not correct.
-```
-
-Click **Try It** — the judge scores every dataset row pass/fail. You now have
-the full improvement loop: label data → judge → refine the agent → re-evaluate.
-The [observability docs](https://docs.mistral.ai/studio/observability) cover
-datasets, evaluators, and evaluation runs.
-
-**Checkpoint:** the judge runs against your dataset and produces a score per row.
-
 ### Read a Real Invoice
 
 The agent handles email text. Real invoices are photos. **Navigate to:**

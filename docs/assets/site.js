@@ -314,6 +314,11 @@ async function initReader() {
   const content = document.getElementById("content");
   const toc = document.getElementById("toc");
   const progress = document.getElementById("progress");
+  if (content.dataset.prerendered === "1") {
+    /* static build-time page: content is already in the HTML */
+    enhanceReader(content, toc, progress);
+    return;
+  }
   if (!id) {
     content.innerHTML =
       '<div class="error-box">Missing guide id. <a href="./index.html">Back to all guides</a></div>';
@@ -340,6 +345,8 @@ async function initReader() {
   setMetaTag("description", g.summary);
   setLinkTag("canonical", location.href);
   marked.setOptions({ gfm: true, breaks: false });
+  /* the page header already renders the H1; drop the markdown title line */
+  const bodyNoH1 = body.replace(/^#\s+.+\r?\n+/, "");
   content.innerHTML =
     '<div class="guide-head">' +
     '<span class="kicker">' + escapeHtml(g.contentType) + "</span>" +
@@ -350,7 +357,7 @@ async function initReader() {
     (g.level ? "<span>" + escapeHtml(g.level) + "</span>" : "") +
     (g.time ? "<span>" + escapeHtml(g.time) + "</span>" : "") +
     "</div></div>" +
-    marked.parse(body);
+    marked.parse(bodyNoH1);
 
   /* header actions from front matter */
   if (g.fork) {
@@ -360,6 +367,10 @@ async function initReader() {
   const cta = document.getElementById("console-cta");
   if (g.platform && !cta.dataset.forced) cta.href = g.platform;
 
+  enhanceReader(content, toc, progress);
+}
+
+function enhanceReader(content, toc, progress) {
   /* style checkpoint callouts */
   content.querySelectorAll("p").forEach((p) => {
     if (p.textContent.trim().startsWith("Checkpoint:")) p.classList.add("checkpoint");

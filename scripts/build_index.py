@@ -23,6 +23,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import markdown
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_PATH = REPO_ROOT / "docs" / "guides.json"
 SITEMAP_PATH = REPO_ROOT / "docs" / "sitemap.xml"
@@ -169,22 +171,37 @@ def build_guide_entry(guide_id: str, meta: dict, body: str) -> dict:
     }
 
 
-def site_base_url() -> str:
-    """Published GitHub Pages URL of this repository (project pages layout)."""
+def git_remote_slug():
+    """(owner, repo) parsed from the origin remote, or None."""
     try:
         out = subprocess.run(
             ["git", "remote", "get-url", "origin"],
             cwd=REPO_ROOT, capture_output=True, text=True, check=True,
         ).stdout.strip()
     except Exception:
-        out = ""
+        return None
     m = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", out)
-    if not m:
+    return (m.group(1), m.group(2)) if m else None
+
+
+def site_base_url() -> str:
+    """Published GitHub Pages URL of this repository (project pages layout)."""
+    slug = git_remote_slug()
+    if not slug:
         return ""
-    owner, repo = m.group(1), m.group(2)
+    owner, repo = slug
     if repo == f"{owner}.github.io":
         return f"https://{repo}/"
     return f"https://{owner}.github.io/{repo}/"
+
+
+def raw_base_url() -> str:
+    """Base URL of guide assets on raw.githubusercontent.com."""
+    slug = git_remote_slug()
+    if not slug:
+        return ""
+    owner, repo = slug
+    return f"https://raw.githubusercontent.com/{owner}/{repo}/main/"
 
 
 SHELL_TEMPLATE = """<!DOCTYPE html>
@@ -199,6 +216,7 @@ SHELL_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
+{og_image}<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
 <script type="application/ld+json">{jsonld}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
@@ -214,22 +232,27 @@ SHELL_TEMPLATE = """<!DOCTYPE html>
     <span class="brand-name">MISTRAL <em>DEVELOPER GUIDES</em></span>
   </a>
   <div class="reader-actions">
-    <a class="btn" id="fork-btn" href="{fork}" target="_blank" rel="noopener" style="display:none"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
+    <a class="btn" id="fork-btn" href="{fork}" target="_blank" rel="noopener" style="{fork_style}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
     <a class="btn accent" href="https://console.mistral.ai" target="_blank" rel="noopener">Open in Mistral Console</a>
   </div>
 </header>
 
 <main class="reader">
-  <article class="markdown-body" id="content">
-    <noscript><p>This guide needs JavaScript. Read it on GitHub instead: <a href="{source}">{title}</a>.</p></noscript>
-    <div class="loading">Loading guide ...</div>
+  <article class="markdown-body" id="content" data-prerendered="1">
+    <div class="guide-head">
+      <span class="kicker">{kicker}</span>
+      <h1>{title}</h1>
+      <div class="sub">{description}</div>
+      <div class="byline">{byline}</div>
+    </div>
+{body_html}
   </article>
   <aside class="rail">
     <h4>On this page</h4>
     <nav id="toc"></nav>
     <div class="rail-cta">
       <p>Ready to build?</p>
-      <a class="btn accent" id="console-cta" href="https://console.mistral.ai" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
+      <a class="btn accent" id="console-cta" href="{platform}" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
     </div>
   </aside>
 </main>
@@ -250,30 +273,58 @@ SHELL_TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
+PNG_ART_RE = re.compile(r"!\[[^\]]*\]\((assets/[^)\s]+\.(?:png|jpe?g))\)")
 
-def guide_shell(guide: dict, base_url: str) -> str:
-    """Static SEO shell for one guide; site.js renders the content client-side."""
+
+def render_body(body: str, guide_id: str, raw_base: str) -> str:
+    """Markdown to HTML for the static page: resolve asset paths against the
+    repo and drop the leading H1 (the page header already renders the title)."""
+    body = re.sub(r"\]\((assets/[^)]+)\)", lambda m: f"]({raw_base}{guide_id}/{m.group(1)})", body)
+    body = H1_RE.sub("", body, count=1)
+    return markdown.markdown(body, extensions=["fenced_code", "tables"])
+
+
+def guide_shell(guide: dict, body: str, base_url: str, raw_base: str) -> str:
+    """Fully pre-rendered static page for one guide; site.js only enhances."""
     canonical = f"{base_url}guides/{guide['id']}/"
     author_name = re.match(r"([^(]+)", guide.get("authors", "")).group(1).strip()
+    og_image_match = PNG_ART_RE.search(body)
+    og_image_url = f"{raw_base}{guide['id']}/{og_image_match.group(1)}" if og_image_match else ""
     jsonld = json.dumps({
         "@context": "https://schema.org",
         "@type": "TechArticle",
         "headline": guide["title"],
         "description": guide.get("summary", ""),
         "url": canonical,
+        **({"image": og_image_url} if og_image_url else {}),
         **({"dateModified": guide["updated"]} if guide.get("updated") else {}),
         **({"author": {"@type": "Person", "name": author_name}} if author_name else {}),
     }, ensure_ascii=False)
+    byline = "".join(
+        f'<span>{html.escape(part)}</span>'
+        for part in (
+            f"by {guide['authors']}" if guide.get("authors") else "",
+            guide.get("level", ""),
+            guide.get("time", ""),
+        )
+        if part
+    )
     return SHELL_TEMPLATE.format(
         title=html.escape(guide["title"], quote=True),
         description=html.escape(guide.get("summary", ""), quote=True),
         canonical=html.escape(canonical, quote=True),
+        og_image=(
+            f'<meta property="og:image" content="{html.escape(og_image_url, quote=True)}">\n'
+            if og_image_url else ""
+        ),
         jsonld=jsonld.replace("</", "<\\/"),
         guide_id=html.escape(guide["id"], quote=True),
+        kicker=html.escape(guide.get("contentType", ""), quote=True),
+        byline=byline,
+        body_html=render_body(body, guide["id"], raw_base),
         fork=html.escape(guide.get("fork") or "https://github.com/vinitshetty/mistral-devguides", quote=True),
-        source=html.escape(
-            f"https://github.com/vinitshetty/mistral-devguides/blob/main/{guide['id']}/index.md", quote=True
-        ),
+        fork_style="" if guide.get("fork") else "display:none",
+        platform=html.escape(guide.get("platform") or "https://console.mistral.ai", quote=True),
     )
 
 
@@ -295,11 +346,13 @@ def write_sitemap(guides: list, base_url: str) -> None:
     )
 
 
-def write_guide_pages(guides: list, base_url: str) -> None:
+def write_guide_pages(guides: list, base_url: str, raw_base: str) -> None:
     for g in guides:
         page_dir = GUIDE_PAGES_DIR / g["id"]
         page_dir.mkdir(parents=True, exist_ok=True)
-        (page_dir / "index.html").write_text(guide_shell(g, base_url), encoding="utf-8")
+        (page_dir / "index.html").write_text(
+            guide_shell(g, g["_body"], base_url, raw_base), encoding="utf-8"
+        )
 
 
 def main() -> int:
@@ -326,7 +379,7 @@ def main() -> int:
             print(f"skip archived guide: {entry.name}")
             continue
         validate(entry.name, meta, body, errors, warnings)
-        guides.append(build_guide_entry(entry.name, meta, body))
+        guides.append({**build_guide_entry(entry.name, meta, body), "_body": body})
 
     for w in warnings:
         print(f"WARNING: {w}")
@@ -339,16 +392,17 @@ def main() -> int:
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "count": len(guides),
-        "guides": guides,
+        "guides": [{k: v for k, v in g.items() if k != "_body"} for g in guides],
     }
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"OK: wrote {len(guides)} guide(s) to {OUTPUT_PATH.relative_to(REPO_ROOT)}")
 
     base_url = site_base_url()
-    if base_url:
+    raw_base = raw_base_url()
+    if base_url and raw_base:
         write_sitemap(guides, base_url)
-        write_guide_pages(guides, base_url)
+        write_guide_pages(guides, base_url, raw_base)
         print(f"OK: wrote sitemap and {len(guides)} guide page(s) under {GUIDE_PAGES_DIR.relative_to(REPO_ROOT)}/")
     else:
         print("WARNING: could not determine Pages URL from git remote; skipped sitemap and guide pages")

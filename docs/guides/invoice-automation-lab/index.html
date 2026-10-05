@@ -10,7 +10,9 @@
 <meta property="og:title" content="The Invoice Automation Lab: Explore, Then Automate">
 <meta property="og:description" content="Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.">
 <meta property="og:url" content="https://vinitshetty.github.io/mistral-devguides/guides/invoice-automation-lab/">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "The Invoice Automation Lab: Explore, Then Automate", "description": "Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.", "url": "https://vinitshetty.github.io/mistral-devguides/guides/invoice-automation-lab/", "dateModified": "2026-10-05", "author": {"@type": "Person", "name": "Vinit Shetty"}}</script>
+<meta property="og:image" content="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/ai-studio-home.png">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "The Invoice Automation Lab: Explore, Then Automate", "description": "Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.", "url": "https://vinitshetty.github.io/mistral-devguides/guides/invoice-automation-lab/", "image": "https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/ai-studio-home.png", "dateModified": "2026-10-05", "author": {"@type": "Person", "name": "Vinit Shetty"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="../../assets/site.css?v=4">
@@ -25,22 +27,353 @@
     <span class="brand-name">MISTRAL <em>DEVELOPER GUIDES</em></span>
   </a>
   <div class="reader-actions">
-    <a class="btn" id="fork-btn" href="https://github.com/vinitshetty/invoice-automation" target="_blank" rel="noopener" style="display:none"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
+    <a class="btn" id="fork-btn" href="https://github.com/vinitshetty/invoice-automation" target="_blank" rel="noopener" style=""><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
     <a class="btn accent" href="https://console.mistral.ai" target="_blank" rel="noopener">Open in Mistral Console</a>
   </div>
 </header>
 
 <main class="reader">
-  <article class="markdown-body" id="content">
-    <noscript><p>This guide needs JavaScript. Read it on GitHub instead: <a href="https://github.com/vinitshetty/mistral-devguides/blob/main/invoice-automation-lab/index.md">The Invoice Automation Lab: Explore, Then Automate</a>.</p></noscript>
-    <div class="loading">Loading guide ...</div>
+  <article class="markdown-body" id="content" data-prerendered="1">
+    <div class="guide-head">
+      <span class="kicker">Quickstart</span>
+      <h1>The Invoice Automation Lab: Explore, Then Automate</h1>
+      <div class="sub">Explore AI Studio by building an invoice agent in the UI, then automate it into a durable workflow that reads invoice photos, extracts structured data, asks a human before paying big bills, and survives a crash you inflict on purpose.</div>
+      <div class="byline"><span>by Vinit Shetty (vinitshetty)</span><span>Beginner</span><span>60 minutes</span></div>
+    </div>
+<h2>Overview</h2>
+<p>Every company has someone who stares at invoice photos and types numbers into a
+spreadsheet. In this lab you build that person a robot — twice.</p>
+<p><strong>Part 1 — Exploration</strong> happens entirely in the Mistral Console UI: you prompt
+a model in the Playground, force its output into clean JSON, deploy it as an
+agent your whole org can use in Vibe, watch live traffic, and set up an
+LLM-as-a-judge to score extractions. Zero code.</p>
+<p><strong>Part 2 — Automation</strong> turns that manual agent into a durable pipeline with
+the <a href="https://pypi.org/project/mistralai-workflows/"><code>mistralai-workflows</code></a> SDK
+(<code>import mistralai.workflows as workflows</code>): Mistral OCR reads 18 real invoice
+photos, a chat model extracts typed JSON, and anything over $3,000 <strong>pauses for
+human approval</strong>. Then — the fun part — you kill the pipeline mid-run and watch
+it resume exactly where it left off.</p>
+<p>The guide lives in the <a href="https://github.com/vinitshetty/mistral-devguides">devguides repo</a>;
+the runnable lab — code, 18 sample invoices, lockfile — lives in its own repo,
+<a href="https://github.com/vinitshetty/invoice-automation">vinitshetty/invoice-automation</a>,
+so one fork gets you a clean working project.</p>
+<blockquote>
+<p>Every command is copy-paste runnable, and every phase ends with a checkpoint.
+Do not skip the crash test.</p>
+</blockquote>
+<h3>Prerequisites</h3>
+<ul>
+<li>Python 3.12+, <a href="https://docs.astral.sh/uv/"><code>uv</code></a> (<code>pip install uv</code>), <code>git</code></li>
+<li>A <a href="https://auth.mistral.ai/ui/login">Mistral account</a> — free tier works</li>
+</ul>
+<h3>What You'll Learn</h3>
+<ul>
+<li>Constrain LLM output to a strict JSON schema in the Playground</li>
+<li>Deploy an agent to Vibe for org-wide access</li>
+<li>Monitor live traffic, build datasets, and score extractions with LLM-as-a-judge</li>
+<li>Define durable workflows and activities with <code>mistralai.workflows</code></li>
+<li>Extract structured JSON from document images with OCR plus chat completions</li>
+<li>Pause a workflow for human approval and resume it with a <strong>signal</strong></li>
+<li>Crash a pipeline mid-run and resume it without losing work</li>
+</ul>
+<h3>What You'll Need</h3>
+<ul>
+<li>An API key from the <a href="https://console.mistral.ai/">Mistral Console</a>
+  (<strong>API Keys</strong> → <em>Create new key</em> — shown only once, copy it now)</li>
+<li>~200 MB of disk for the Python environment</li>
+<li>Costs pennies across the whole lab; fits in trial credit</li>
+</ul>
+<h3>What You'll Build</h3>
+<p>Part 1: a deployed <code>invoice-extractor-v1</code> agent answering in Vibe.
+Part 2: the pipeline below — four activities, one human gate, wired end to end.</p>
+<p><img alt="Invoice processing pipeline" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/invoice-pipeline.svg" /></p>
+<h2>Part 1 — Exploration</h2>
+<h3>Prompt in the Playground</h3>
+<p><strong>Navigate to:</strong> Mistral Console » <strong>Playground</strong>.</p>
+<p><img alt="AI Studio home with the Playground highlighted" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/ai-studio-home.png" /></p>
+<p>Paste this sample vendor email:</p>
+<pre><code>Hey there! Hope you're doing well. Just sending over the bill for last week's
+catering from Downtown Delights. It came out to $452.10. Let me know when
+you've sent the wire!
+</code></pre>
+<p>Send the prompt:</p>
+<pre><code>Help me process this invoice email.
+</code></pre>
+<p>You get a conversational, inconsistent reply — fine for a human, useless for
+automation. The next step fixes that.</p>
+<h3>Constrain the Output</h3>
+<p>Open the <strong>Instructions</strong> panel and paste:</p>
+<pre><code>Act as a specialized data extraction assistant.
+
+Your task is to process the following email text and extract the
+'supplier_name' and the 'total_amount'.
+
+Rules:
+1. Extract 'supplier_name' as a string.
+2. Extract 'total_amount' as a float (number only, remove currency symbols).
+3. If information is missing, use null.
+4. Output the result strictly in JSON format with the two fields
+'supplier_name' and 'total_amount'. Don't add a &quot;properties&quot; field.
+</code></pre>
+<p>Open <strong>Response Format</strong>, switch to JSON mode, and define this schema:</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [&quot;supplier_name&quot;, &quot;total_amount&quot;],
+  &quot;properties&quot;: {
+    &quot;supplier_name&quot;: { &quot;type&quot;: &quot;string&quot; },
+    &quot;total_amount&quot;: { &quot;type&quot;: &quot;number&quot; }
+  }
+}
+</code></pre>
+<p>Re-run the same email. Now the reply is a predictable, database-ready object:</p>
+<pre><code class="language-json">{ &quot;supplier_name&quot;: &quot;Downtown Delights&quot;, &quot;total_amount&quot;: 452.10 }
+</code></pre>
+<p><strong>Checkpoint:</strong> the same prompt now returns the same shape every single time.</p>
+<h3>Deploy the Agent</h3>
+<ol>
+<li>Click <strong>Create Agent</strong> (top right), name it <code>invoice-extractor-v1</code>.</li>
+<li>Choose <strong>Deploy to Vibe</strong>, then <strong>Open in Vibe</strong>.</li>
+<li>Test it with a second invoice, no code involved:</li>
+</ol>
+<pre><code>Hey, this is &quot;Boulangerie de Paris&quot;, you owe me 5€ for the croissants
+</code></pre>
+<p>Your agent is live and usable across your organization. See
+<a href="https://docs.mistral.ai/studio/agents/introduction">Agents in AI Studio</a> for
+the full feature set.</p>
+<p><strong>Checkpoint:</strong> Vibe replies with structured JSON from your deployed agent.</p>
+<h3>Read a Real Invoice</h3>
+<p>The agent handles email text. Real invoices are photos. <strong>Navigate to:</strong>
+AI Studio » <strong>Document AI</strong>, upload <code>batch1-1472.jpg</code> from the lab repo (or any
+invoice image), and inspect the structured extraction — OCR, layout, and
+multi-page handling with no preprocessing.</p>
+<p>You have now seen every ingredient manually. Time to wire them into a pipeline
+that runs itself. The <a href="https://docs.mistral.ai/studio/document-processing/overview">Document AI overview</a>
+is the reference.</p>
+<p><strong>Checkpoint:</strong> an invoice photo becomes structured key-values in the console.</p>
+<h2>Part 2 — Automation</h2>
+<h3>Set Up the Lab</h3>
+<p>Clone the lab repo (code + 18 sample invoices) and install dependencies:</p>
+<pre><code class="language-bash">git clone https://github.com/vinitshetty/invoice-automation.git
+cd invoice-automation
+uv sync
+cp .env.example .env
+# open .env and set MISTRAL_API_KEY=&lt;your key&gt;
+</code></pre>
+<p>Two other variables in <code>.env</code> matter:</p>
+<ul>
+<li><code>SERVER_URL</code> — keep the default <code>https://api.mistral.ai</code></li>
+<li><code>DEPLOYMENT_NAME</code> — a stable name for this worker (the template uses
+  <code>invoice-parser</code>). The SDK uses it as the task queue, so executions are
+  routed to workers sharing the name.</li>
+</ul>
+<p>Verify the install:</p>
+<pre><code class="language-bash">uv run python -c &quot;import mistralai.workflows; print('Workflows is installed successfully!')&quot;
+</code></pre>
+<p><strong>Checkpoint:</strong> the command prints <code>Workflows is installed successfully!</code></p>
+<h3>Extract Your First Invoice</h3>
+<p>Prove the pipeline works before touching workers or queues. This script calls
+two activities directly — OCR, then extraction — on the first invoice photo:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/utils/test.py
+</code></pre>
+<p>Expected output (abbreviated):</p>
+<pre><code>Reading document from: invoices/batch1-1472.jpg
+ITEMS
+
+|  No. | Description | Qty | UM | Net price | Net worth | VAT [%] | Gross worth  |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+|  1. | EU Blichmann Riptide Brewing Pump - Hombrew Beer Wine ...
+Structured Output result: invoice_number='97833274' date='2014-03-09'
+total_amount=440.0 bank_details='GB88PASK22658399910069'
+supplier='Baker, Pearson and Perry' invoice_category='raw_materials'
+</code></pre>
+<p>Both activities live in <code>workflows/workflow/worker.py</code>:</p>
+<ul>
+<li><code>process_document_ocr</code> base64-encodes the photo and calls
+  <code>mistral-ocr-latest</code>, which returns markdown per page — it even recovered the
+  line-items table.</li>
+<li><code>extract_invoice_data</code> sends that markdown to <code>mistral-large-latest</code> with a
+  strict JSON schema (<code>response_format={"type": "json_schema", ...}</code>), then
+  validates the reply with <code>InvoiceData.model_validate_json</code>. Bad extractions
+  cannot pass the type check.</li>
+</ul>
+<p><strong>Checkpoint:</strong> a photo became six typed fields — including the supplier's
+bank account — in under ten minutes.</p>
+<h3>Start the Worker</h3>
+<p>A <strong>worker</strong> connects outbound to Mistral and pulls work from a task queue;
+your workflow runs nowhere until one is live:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/workflow/worker.py
+</code></pre>
+<p>Watch for two lines:</p>
+<pre><code>Workflow registered WITHOUT versioning behavior ... workflow_name=ocr_invoice_workflow_test
+Registered activities ... ['...', 'process_document_ocr', 'extract_invoice_data',
+'data_enrichment_with_mcp', 'send_to_validation']
+</code></pre>
+<p>The worker fetched its Temporal settings from your API key (config discovery)
+and is polling the task queue named after your <code>DEPLOYMENT_NAME</code>. Leave this
+terminal running. Kill the worker and executions simply wait; start it again
+and work resumes — you will exploit this shortly.</p>
+<p><strong>Checkpoint:</strong> the <code>Registered activities</code> line lists your four activities.</p>
+<h3>Run the Full Pipeline</h3>
+<p>In a second terminal, process a single invoice:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/workflow/run.py invoices/batch1-1472.jpg
+</code></pre>
+<p>Expected output:</p>
+<pre><code>[batch1-1472.jpg] Workflow started. Waiting for completion...
+======================================================================
+Invoice processing complete.
+
+**Invoice #97833274**
+- Supplier: Baker, Pearson and Perry
+- Date: 2014-03-09
+- Amount: $440.00
+- Category: raw_materials
+- Decision: APPROVED
+- Required approval: False
+======================================================================
+</code></pre>
+<p><code>run.py</code> drives the pipeline through the Mistral Python client:</p>
+<pre><code class="language-python">client = Mistral(server_url=os.environ[&quot;SERVER_URL&quot;], api_key=os.environ[&quot;MISTRAL_API_KEY&quot;])
+
+await client.workflows.execute_workflow_async(          # trigger
+    workflow_identifier=&quot;ocr_invoice_workflow_test&quot;,
+    input=OCRWorkflowInput(document_path=document_path),
+    execution_id=execution_id,
+    deployment_name=os.environ.get(&quot;DEPLOYMENT_NAME&quot;),
+)
+response = await client.workflows.wait_for_workflow_completion_async(execution_id)  # poll
+</code></pre>
+<p>Inside the workflow, the four activities run under a <strong>TodoList</strong> — a live
+progress widget you can watch streaming in AI Studio's execution timeline.</p>
+<p><img alt="Execution timeline in AI Studio: OCR, extraction, enrichment" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/studio-execution-timeline.png" /></p>
+<p>$440 is under the threshold, so approval was skipped. Time for a more expensive
+problem.</p>
+<p><strong>Checkpoint:</strong> your summary shows a supplier, an amount, and <code>Decision: APPROVED</code>.</p>
+<h3>Play Approving Manager</h3>
+<p>Run the big invoice:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/workflow/run.py invoices/batch1-1480.jpg
+</code></pre>
+<p>This one totals <strong>$9,556.58</strong>, so the workflow parks on
+<code>wait_for_input(InvoiceApprovalForm)</code> — an approve/reject form — and the
+runner prints the command to act on it:</p>
+<pre><code>[batch1-1480.jpg] To approve: uv run python workflows/utils/approve.py &lt;execution-id&gt;
+</code></pre>
+<p>In a third terminal, be the manager:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/utils/approve.py &lt;execution-id&gt;          # approve
+uv run --frozen python workflows/utils/approve.py &lt;execution-id&gt; --reject # reject
+</code></pre>
+<p>The script sends a <strong>signal</strong> — a named message to a running execution:</p>
+<pre><code class="language-python">await client.workflows.executions.signal_workflow_execution_async(
+    execution_id=execution_id,
+    name=&quot;approve&quot;,
+    input={&quot;approved&quot;: approved},   # plain dict matching the signal's schema
+)
+</code></pre>
+<p>The paused workflow wakes, reads the decision, and finishes:</p>
+<pre><code>**Invoice #77404624**
+- Supplier: Hayes-Mcdonald
+- Amount: $9556.58
+- Decision: APPROVED
+- Required approval: True
+</code></pre>
+<p><strong>Checkpoint:</strong> an invoice above $3,000 cannot complete until a human says so.</p>
+<h3>Crash It On Purpose</h3>
+<p>The signature move. <code>run_w_resume.py</code> processes all 18 invoices with
+<strong>deterministic execution IDs</strong> (<code>invoice-&lt;name&gt;-&lt;run-id&gt;</code>):</p>
+<ul>
+<li><code>COMPLETED</code> → skip</li>
+<li><code>RUNNING</code> → attach and wait</li>
+<li><code>FAILED</code> / <code>TIMED_OUT</code> / <code>CANCELED</code> → re-execute with the same ID</li>
+</ul>
+<p>Start a batch, then kill it mid-flight:</p>
+<pre><code class="language-bash">uv run --frozen python workflows/workflow/run_w_resume.py labrun1
+# ... invoices are streaming through OCR ... now Ctrl+C
+uv run --frozen python workflows/workflow/run_w_resume.py labrun1
+</code></pre>
+<p>Expected output on the second pass:</p>
+<pre><code>[batch1-1472.jpg] Already completed, skipping.
+[batch1-1475.jpg] Already running (status=RUNNING), attaching...
+[batch1-1479.jpg] Previous run ended with status=FAILED, re-executing...
+</code></pre>
+<p>Nothing is re-OCR'd from scratch. Mistral's managed Temporal engine holds the
+workflow's state server-side — which is why "just restart it" is a valid
+production strategy for this pipeline.</p>
+<blockquote>
+<p>Use the same run ID to resume; a new ID reprocesses everything.</p>
+</blockquote>
+<p><strong>Checkpoint:</strong> the second run skips everything the first run finished.</p>
+<h3>Publish the Workflow</h3>
+<p>Part 1 deployed a chat agent. Publish the automated pipeline the same way:</p>
+<ol>
+<li>Open the <a href="https://console.mistral.ai/">Mistral Console</a> » <strong>Workflows</strong> —
+   your <code>OCR Invoice Workflow Test</code> is there with its executions, timeline,
+   and pending-input events.</li>
+<li>Click <strong>Publish to Vibe</strong>.</li>
+<li>Open <a href="https://vibe.mistral.ai/">Vibe</a>, find your workflow under
+   assistants, and send it an invoice document.</li>
+</ol>
+<p><img alt="The workflow in AI Studio: executions and the publish action" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/invoice-automation-lab/assets/studio-workflow-executions.png" /></p>
+<p>The workflow appears as a conversational assistant: it streams TodoList
+progress as it works, and a $9,556 invoice renders the approval form right in
+the chat. Approving is a click.</p>
+<p><strong>Checkpoint:</strong> a colleague with zero terminals installed can now process an
+invoice end to end.</p>
+<h2>Troubleshooting</h2>
+<ul>
+<li><strong><code>ValueError: DEPLOYMENT_NAME is required</code></strong> — set <code>DEPLOYMENT_NAME</code> in
+  <code>.env</code>, and use the same value for worker and runners.</li>
+<li><strong><code>Failed validating workflow</code></strong> with <code>RestrictedWorkflowAccessError</code> — the
+  Temporal sandbox caught a non-deterministic import. Keep activity-only
+  imports (the <code>Mistral</code> client, <code>httpx</code>, <code>aiohttp</code>) inside
+  <code>with workflow.unsafe.imports_passed_through():</code>, as this repo does.</li>
+<li><strong><code>Input should be a valid dictionary</code></strong> when signaling — the signal <code>input</code>
+  must be a plain dict, not a pydantic model.</li>
+<li><strong><code>401</code> / <code>Unauthorized</code></strong> — check <code>MISTRAL_API_KEY</code> in <code>.env</code>.</li>
+<li><strong>Agent not visible in Vibe</strong> — in the Console, check the agent's
+  deployment status under <strong>Agents</strong>; deploying to Vibe can take a minute.</li>
+</ul>
+<h2>Conclusion and Resources</h2>
+<h3>What You Learned</h3>
+<p>You constrained LLM output with a strict JSON schema, deployed an agent to
+Vibe, built an evaluation loop with datasets and an LLM judge, and read
+invoice photos with Document AI. Then you turned that manual setup into a
+durable workflow: four activities, OCR-to-typed-records, a human approval
+signal gate, crash-resumable batches, and an org-wide chat interface.</p>
+<h3>What You Accomplished</h3>
+<p>One repo, one payables robot. Part 1 proved each ingredient by hand in the
+console; Part 2 wired them into a pipeline that runs itself — 18 invoice
+photos in, structured records out, human approval for anything over $3,000,
+and durability that shrugs off worker crashes. Point it at your own documents
+by changing one folder path.</p>
+<h3>Next Steps</h3>
+<ul>
+<li>Swap the simulated CRM activity for a real one — or an MCP server via the
+  <a href="https://docs.mistral.ai/studio/workflows/building-workflows/connectors">connectors plugin</a></li>
+<li>Give the robot a <a href="https://docs.mistral.ai/studio/workflows/building-workflows/scheduling">schedule</a></li>
+<li>Feed the judge into CI with the
+  <a href="https://docs.mistral.ai/studio/observability/evaluations/evaluators">evaluations toolkit</a></li>
+<li>Go deeper with <a href="https://docs.mistral.ai/studio/workflows/getting-started/core_concepts">core concepts</a></li>
+</ul>
+<h3>Related Resources</h3>
+<ul>
+<li><a href="https://docs.mistral.ai/studio/workflows/getting-started/overview">Mistral Workflows overview</a></li>
+<li><a href="https://docs.mistral.ai/studio/workflows/getting-started/your_first_workflow">Your first workflow</a></li>
+<li><a href="https://docs.mistral.ai/studio/workflows/getting-started/cookbook_examples">Workflows cookbook examples</a></li>
+<li><a href="https://docs.mistral.ai/studio/workflows/building-workflows/waiting_for_conditions">Waiting for conditions</a></li>
+<li><a href="https://docs.mistral.ai/studio/workflows/managing-workflows-in-production/deployments">Deployments in production</a></li>
+<li><a href="https://docs.mistral.ai/studio/agents/introduction">Agents in AI Studio</a></li>
+<li><a href="https://docs.mistral.ai/studio/conversations/structured-output">Structured output</a></li>
+<li><a href="https://docs.mistral.ai/studio/observability">Observability and evaluations</a></li>
+<li><a href="https://docs.mistral.ai/studio/document-processing/overview">Document processing overview</a></li>
+<li><a href="https://pypi.org/project/mistralai-workflows/">mistralai-workflows on PyPI</a></li>
+<li><a href="https://github.com/vinitshetty/invoice-automation">Lab repository — fork it</a></li>
+</ul>
   </article>
   <aside class="rail">
     <h4>On this page</h4>
     <nav id="toc"></nav>
     <div class="rail-cta">
       <p>Ready to build?</p>
-      <a class="btn accent" id="console-cta" href="https://console.mistral.ai" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
+      <a class="btn accent" id="console-cta" href="https://console.mistral.ai/" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
     </div>
   </aside>
 </main>

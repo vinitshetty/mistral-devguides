@@ -29,6 +29,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install build dependencies
+        run: pip install "markdown>=3.5"
+
       - name: Validate guides and build index
         run: python scripts/build_index.py
 

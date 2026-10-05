@@ -25,12 +25,12 @@ level: Beginner
 Every company has someone who stares at invoice photos and types numbers into a
 spreadsheet. In this lab you build that person a robot — twice.
 
-**Part 1 — Exploration** happens entirely in the Mistral Console UI: you prompt
+**Part 1: Exploration** happens entirely in the Mistral Console UI: you prompt
 a model in the Playground, force its output into clean JSON, deploy it as an
 agent your whole org can use in Vibe, watch live traffic, and set up an
 LLM-as-a-judge to score extractions. Zero code.
 
-**Part 2 — Automation** turns that manual agent into a durable pipeline with
+**Part 2: Automation** turns that manual agent into a durable pipeline with
 the [`mistralai-workflows`](https://pypi.org/project/mistralai-workflows/) SDK
 (`import mistralai.workflows as workflows`): Mistral OCR reads 18 real invoice
 photos, a chat model extracts typed JSON, and anything over $3,000 **pauses for

@@ -421,8 +421,8 @@ invoice end to end.
 
 ### What You Learned
 
-You constrained LLM output with a strict JSON schema, deployed an agent to Le
-Chat, built an evaluation loop with datasets and an LLM judge, and read
+You constrained LLM output with a strict JSON schema, deployed an agent to
+Vibe, built an evaluation loop with datasets and an LLM judge, and read
 invoice photos with Document AI. Then you turned that manual setup into a
 durable workflow: four activities, OCR-to-typed-records, a human approval
 signal gate, crash-resumable batches, and an org-wide chat interface.

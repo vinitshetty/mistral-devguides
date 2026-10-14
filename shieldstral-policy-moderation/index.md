@@ -9,7 +9,7 @@ status: Published
 authors: Vinit Shetty (vinitshetty)
 summary: Self-host Mistral's Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.
 feedback link: https://github.com/vinitshetty/mistral-devguides/issues
-fork repo link: https://github.com/mistralai/cookbook
+fork repo link: https://github.com/mistralai/cookbook/blob/main/mistral/moderation/shieldstral_policy_moderation.ipynb
 platform link: https://huggingface.co/mistralai/Shieldstral-1.0-3B
 estimated_time: 45 minutes
 level: Intermediate

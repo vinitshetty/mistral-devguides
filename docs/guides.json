@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T06:44:50+00:00",
+  "generated_at": "2026-10-14T08:08:10+00:00",
   "count": 2,
   "guides": [
     {
@@ -20,7 +20,7 @@
       "level": "Intermediate",
       "time": "45 minutes",
       "authors": "Vinit Shetty (vinitshetty)",
-      "fork": "https://github.com/mistralai/cookbook",
+      "fork": "https://github.com/mistralai/cookbook/blob/main/mistral/moderation/shieldstral_policy_moderation.ipynb",
       "platform": "https://huggingface.co/mistralai/Shieldstral-1.0-3B",
       "language": "en",
       "art": "shieldstral-policy-moderation/assets/shieldstral-moderation-flow.svg",

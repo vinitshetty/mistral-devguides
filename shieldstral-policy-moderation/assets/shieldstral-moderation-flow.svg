@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 660" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#52525b"/>
+    </marker>
+  </defs>
+  <rect width="920" height="660" fill="#fafaf9"/>
+  <!-- content input -->
+  <rect x="340" y="20" width="240" height="56" rx="10" fill="#ffffff" stroke="#a1a1aa" stroke-dasharray="6 4" stroke-width="1.5"/>
+  <text x="460" y="45" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">Your content</text>
+  <text x="460" y="64" text-anchor="middle" font-size="12" fill="#71717a">text · conversation · image</text>
+  <line x1="460" y1="76" x2="460" y2="94" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- policy input -->
+  <rect x="340" y="98" width="240" height="84" rx="10" fill="#ffffff" stroke="#a1a1aa" stroke-dasharray="6 4" stroke-width="1.5"/>
+  <text x="460" y="123" text-anchor="middle" font-size="14" font-weight="600" fill="#18181b">Your policy, in plain language</text>
+  <text x="460" y="143" text-anchor="middle" font-size="12" fill="#71717a">&lt;Instruct&gt; context + strictness</text>
+  <text x="460" y="161" text-anchor="middle" font-size="12" fill="#71717a">&lt;Query&gt; one yes/no question</text>
+  <line x1="460" y1="182" x2="460" y2="202" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- model -->
+  <rect x="310" y="206" width="300" height="76" rx="10" fill="#fff7ed" stroke="#ff7000" stroke-width="1.5"/>
+  <text x="460" y="232" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">Shieldstral-1.0-3B</text>
+  <text x="460" y="252" text-anchor="middle" font-size="12" fill="#71717a">open-weights multimodal safety classifier</text>
+  <text x="460" y="270" text-anchor="middle" font-size="12" fill="#71717a">any policy, supplied at inference time</text>
+  <line x1="460" y1="282" x2="460" y2="300" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- logits -->
+  <rect x="340" y="304" width="240" height="56" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="460" y="329" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">yes / no logits</text>
+  <text x="460" y="348" text-anchor="middle" font-size="12" fill="#71717a">top-20 logprobs, final position</text>
+  <line x1="460" y1="360" x2="460" y2="378" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- score -->
+  <rect x="340" y="382" width="240" height="56" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="460" y="407" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">unsafe score 0–1</text>
+  <text x="460" y="426" text-anchor="middle" font-size="12" fill="#71717a">softmax P(yes) over the two logits</text>
+  <line x1="460" y1="438" x2="460" y2="456" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- decision diamond -->
+  <polygon points="460,460 558,510 460,560 362,510" fill="#fff7ed" stroke="#ff7000" stroke-width="1.5"/>
+  <text x="460" y="515" text-anchor="middle" font-size="13" font-weight="600" fill="#18181b">score &gt; 0.5?</text>
+  <line x1="558" y1="510" x2="596" y2="510" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="600" y="485" width="140" height="50" rx="10" fill="#fff7ed" stroke="#ff7000" stroke-width="1.5"/>
+  <text x="670" y="507" text-anchor="middle" font-size="14" font-weight="600" fill="#18181b">FLAGGED</text>
+  <text x="670" y="525" text-anchor="middle" font-size="12" fill="#71717a">block or review</text>
+  <line x1="460" y1="560" x2="460" y2="582" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="390" y="586" width="140" height="48" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="460" y="607" text-anchor="middle" font-size="14" font-weight="600" fill="#18181b">safe</text>
+  <text x="460" y="625" text-anchor="middle" font-size="12" fill="#71717a">pass through</text>
+  <!-- serving modes -->
+  <rect x="30" y="228" width="210" height="72" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="135" y="256" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">Transformers</text>
+  <text x="135" y="276" text-anchor="middle" font-size="12" fill="#71717a">local GPU or Colab T4</text>
+  <line x1="240" y1="244" x2="306" y2="244" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="680" y="228" width="210" height="72" rx="10" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+  <text x="785" y="256" text-anchor="middle" font-size="15" font-weight="600" fill="#18181b">vLLM server</text>
+  <text x="785" y="276" text-anchor="middle" font-size="12" fill="#71717a">OpenAI-compatible API</text>
+  <line x1="680" y1="244" x2="614" y2="244" stroke="#52525b" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>

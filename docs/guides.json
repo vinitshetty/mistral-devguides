@@ -1,7 +1,31 @@
 {
-  "generated_at": "2026-10-05T09:11:14+00:00",
-  "count": 1,
+  "generated_at": "2026-10-14T04:07:25+00:00",
+  "count": 2,
   "guides": [
+    {
+      "id": "shieldstral-policy-moderation",
+      "title": "Policy-Based Moderation with Shieldstral",
+      "summary": "Self-host Mistral's Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.",
+      "categories": [
+        "Quickstart",
+        "Open-weight models > Shieldstral",
+        "Self-deployment > vLLM"
+      ],
+      "contentType": "Quickstart",
+      "industries": [],
+      "products": [
+        "Open-weight models",
+        "Self-deployment"
+      ],
+      "level": "Intermediate",
+      "time": "45 minutes",
+      "authors": "Vinit Shetty (vinitshetty)",
+      "fork": "https://github.com/mistralai/cookbook",
+      "platform": "https://huggingface.co/mistralai/Shieldstral-1.0-3B",
+      "language": "en",
+      "art": "shieldstral-policy-moderation/assets/shieldstral-moderation-flow.svg",
+      "updated": "2026-10-14"
+    },
     {
       "id": "invoice-automation-lab",
       "title": "The Invoice Automation Lab: Explore, Then Automate",

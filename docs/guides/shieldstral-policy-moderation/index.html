@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Policy-Based Moderation with Shieldstral - Mistral Developer Guides</title>
+<meta name="description" content="Self-host Mistral&#x27;s Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.">
+<link rel="canonical" href="https://vinitshetty.github.io/mistral-devguides/guides/shieldstral-policy-moderation/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Policy-Based Moderation with Shieldstral">
+<meta property="og:description" content="Self-host Mistral&#x27;s Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.">
+<meta property="og:url" content="https://vinitshetty.github.io/mistral-devguides/guides/shieldstral-policy-moderation/">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Policy-Based Moderation with Shieldstral", "description": "Self-host Mistral's Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.", "url": "https://vinitshetty.github.io/mistral-devguides/guides/shieldstral-policy-moderation/", "dateModified": "2026-10-14", "author": {"@type": "Person", "name": "Vinit Shetty"}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../../assets/site.css?v=4">
+</head>
+<body data-guide-id="shieldstral-policy-moderation">
+
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <a class="brand" href="../../index.html">
+    <span class="brand-mark">M</span>
+    <span class="brand-name">MISTRAL <em>DEVELOPER GUIDES</em></span>
+  </a>
+  <div class="reader-actions">
+    <a class="btn" id="fork-btn" href="https://github.com/mistralai/cookbook" target="_blank" rel="noopener" style=""><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
+    <a class="btn accent" href="https://console.mistral.ai" target="_blank" rel="noopener">Open in Mistral Console</a>
+  </div>
+</header>
+
+<main class="reader">
+  <article class="markdown-body" id="content" data-prerendered="1">
+    <div class="guide-head">
+      <span class="kicker">Quickstart</span>
+      <h1>Policy-Based Moderation with Shieldstral</h1>
+      <div class="sub">Self-host Mistral&#x27;s Shieldstral safety classifier and moderate text, conversations, and images against policies you write as plain-language questions — with Transformers or a vLLM server.</div>
+      <div class="byline"><span>by Vinit Shetty (vinitshetty)</span><span>Intermediate</span><span>45 minutes</span></div>
+    </div>
+<p>Guardrail models usually ship a fixed list of harm categories. If your policy
+doesn't map onto that list, you retrain or you live with the mismatch.
+<a href="https://huggingface.co/mistralai/Shieldstral-1.0-3B">Shieldstral</a> takes the
+other path: Mistral's open-weights 3B <strong>multimodal safety classifier</strong> answers
+a yes/no question you write yourself, in plain language, at inference time —
+and its output logits yield a continuous safety score. No fixed categories, no
+retraining.</p>
+<blockquote>
+<p>Shieldstral is <strong>self-hosted only</strong> — there is no Mistral API endpoint for
+it. You run the weights locally with Transformers, or deploy them behind a
+vLLM server for production. Adapted from the <a href="https://github.com/mistralai/cookbook/blob/main/mistral/moderation/shieldstral_policy_moderation.ipynb">Mistral Cookbook notebook</a>.</p>
+</blockquote>
+<p>Every moderation request follows the same structure:</p>
+<ol>
+<li><strong>System prompt</strong> (fixed): <em>"Judge whether the Document meets the
+   requirements based on the Query and the Instruction provided. Note that the
+   answer can only be 'yes' or 'no'."</em></li>
+<li><strong>User message</strong> with three fields:</li>
+<li><code>&lt;Instruct&gt;</code> — high-level context and strictness level</li>
+<li><code>&lt;Query&gt;</code> — a single yes/no question about the content</li>
+<li><code>&lt;Document&gt;</code> — the content to evaluate</li>
+<li><strong>Output</strong> — a single <code>yes</code> or <code>no</code> token. Take the softmax over the yes/no
+   logits to get a continuous score:</li>
+</ol>
+<p><code>python
+   score = math.exp(z_yes) / (math.exp(z_yes) + math.exp(z_no))</code></p>
+<p>A score above 0.5 means the content is flagged as unsafe.</p>
+<h3>Prerequisites</h3>
+<ul>
+<li>Python 3.9 or later</li>
+<li>A GPU — an NVIDIA GPU with at least 8 GB VRAM (a free Colab T4 runtime works)</li>
+<li>A <a href="https://huggingface.co/join">HuggingFace account</a> with access to
+  <a href="https://huggingface.co/mistralai/Shieldstral-1.0-3B"><code>mistralai/Shieldstral-1.0-3B</code></a></li>
+</ul>
+<h3>What You'll Learn</h3>
+<ul>
+<li>Load and run an open-weights safety classifier locally with Transformers</li>
+<li>Frame moderation as policy-adaptive question answering (<code>&lt;Instruct&gt;</code> /
+  <code>&lt;Query&gt;</code> / <code>&lt;Document&gt;</code>)</li>
+<li>Extract a continuous safety score from yes/no logits</li>
+<li>Write custom policies for any category — toxicity, financial advice, PII,
+  medical claims — without retraining</li>
+<li>Moderate multi-turn conversations and images (multimodal input)</li>
+<li>Tune the flagging threshold and screen multiple policies</li>
+<li>Serve Shieldstral behind vLLM as an OpenAI-compatible endpoint</li>
+</ul>
+<h3>What You'll Need</h3>
+<ul>
+<li>A HuggingFace token (<code>HF_TOKEN</code>) to download the ~7 GB of model weights —
+  accept the license on the
+  <a href="https://huggingface.co/mistralai/Shieldstral-1.0-3B">model page</a> first</li>
+<li>No Mistral API key — Shieldstral runs entirely on your own hardware</li>
+<li>~10 GB of disk for the weights plus the Python environment</li>
+</ul>
+<h3>What You'll Build</h3>
+<p>A working moderation pipeline, in two serving modes:</p>
+<ol>
+<li><strong>Transformers</strong> — load the model locally (Colab-friendly) and moderate
+   text, conversations, and images from Python.</li>
+<li><strong>vLLM</strong> — an OpenAI-compatible server endpoint for production workloads.</li>
+</ol>
+<p><img alt="Shieldstral moderation flow: content plus a plain-language policy go in, a scored yes/no verdict comes out" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/shieldstral-policy-moderation/assets/shieldstral-moderation-flow.svg" /></p>
+<h2>Set Up Your Environment</h2>
+<p>Install the Transformers library with Mistral support:</p>
+<pre><code class="language-bash">pip install &quot;transformers[torch,mistral-common]&quot; --upgrade -q
+</code></pre>
+<p>Shieldstral is self-hosted — no Mistral API key is needed. Set your
+HuggingFace token to download the model weights (the snippet prompts you if it
+isn't set):</p>
+<pre><code class="language-python">import os
+from getpass import getpass
+
+if not os.environ.get(&quot;HF_TOKEN&quot;):
+    os.environ[&quot;HF_TOKEN&quot;] = getpass(&quot;HuggingFace token: &quot;)
+</code></pre>
+<p><strong>Checkpoint:</strong> <code>HF_TOKEN</code> is set in your environment.</p>
+<h2>Load the Model</h2>
+<p>Load the model and tokenizer from HuggingFace. The first run downloads about
+7 GB of weights:</p>
+<pre><code class="language-python">import math
+import torch
+from transformers import Mistral3ForConditionalGeneration, MistralCommonBackend
+
+MODEL = &quot;mistralai/Shieldstral-1.0-3B&quot;
+
+SYSTEM_PROMPT = (
+    &quot;Judge whether the Document meets the requirements based on the Query &quot;
+    'and the Instruction provided. Note that the answer can only be &quot;yes&quot; or &quot;no&quot;.'
+)
+
+tokenizer = MistralCommonBackend.from_pretrained(MODEL)
+model = Mistral3ForConditionalGeneration.from_pretrained(
+    MODEL, device_map=&quot;cuda&quot;, dtype=torch.bfloat16
+).eval()
+
+print(&quot;Model loaded.&quot;)
+</code></pre>
+<p>The model runs on a single GPU with about 8 GB of VRAM in <code>bfloat16</code>.</p>
+<p><strong>Checkpoint:</strong> the cell prints <code>Model loaded.</code></p>
+<h2>Score Content with Logits</h2>
+<p>The <code>unsafe_score</code> helper runs a forward pass, extracts the top-20 logprobs at
+the final position, and computes a safety score by softmax-normalizing the
+yes/no logits. It accepts variants like <code>yes.</code>, <code>"yes"</code>, <code>'yes'</code> so punctuation
+in the model's answer can't break the parse:</p>
+<pre><code class="language-python">_YES = (&quot;yes&quot;, &quot;yes.&quot;, '&quot;yes&quot;', &quot;'yes'&quot;)
+_NO = (&quot;no&quot;, &quot;no.&quot;, '&quot;no&quot;', &quot;'no'&quot;)
+
+
+@torch.no_grad()
+def unsafe_score(messages, threshold=0.5):
+    &quot;&quot;&quot;Return (score, is_flagged) for a message list.&quot;&quot;&quot;
+    enc = tokenizer.apply_chat_template(
+        messages, return_tensors=&quot;pt&quot;, return_dict=True
+    )
+    inputs = {}
+    for k, v in enc.items():
+        if not torch.is_tensor(v):
+            inputs[k] = v
+        elif k == &quot;pixel_values&quot;:
+            inputs[k] = v.to(model.device, model.dtype)
+        else:
+            inputs[k] = v.to(model.device)
+
+    logits = model(**inputs).logits[0, -1].float()
+    logprobs = torch.log_softmax(logits, dim=-1)
+
+    z_yes, z_no = -1e9, -1e9
+    values, indices = logprobs.topk(20)
+    for logp, token_id in zip(values.tolist(), indices.tolist()):
+        tok = tokenizer.decode([token_id]).strip().lower()
+        if tok in _YES:
+            z_yes = max(z_yes, logp)
+        elif tok in _NO:
+            z_no = max(z_no, logp)
+
+    score = math.exp(z_yes) / (math.exp(z_yes) + math.exp(z_no))
+    return score, score &gt; threshold
+</code></pre>
+<p>And the <code>build_messages</code> helper assembles the system + user message pair from
+your three policy fields:</p>
+<pre><code class="language-python">def build_messages(instruct, query, document):
+    &quot;&quot;&quot;Build the message list for a Shieldstral moderation request.&quot;&quot;&quot;
+    user_message = (
+        f&quot;&lt;Instruct&gt;: {instruct}\n\n&quot;
+        f&quot;&lt;Query&gt;: {query}\n\n&quot;
+        f&quot;&lt;Document&gt;: {document}&quot;
+    )
+    return [
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_message},
+    ]
+</code></pre>
+<p><strong>Checkpoint:</strong> both helpers are defined without errors.</p>
+<h2>Moderate Your First Message</h2>
+<p>Test with a safe message and an unsafe one against the same policy:</p>
+<pre><code class="language-python">instruct = (
+    &quot;You are a strict safety moderator reviewing potentially harmful content. &quot;
+    &quot;Apply a low tolerance threshold.&quot;
+)
+query = &quot;Does this content promote physical violence?&quot;
+
+# Safe message
+safe_messages = build_messages(
+    instruct, query, &quot;[User] What are some good exercises for building core strength?&quot;
+)
+score, flagged = unsafe_score(safe_messages)
+print(f&quot;Safe example:   score={score:.3f}  flagged={flagged}&quot;)
+
+# Unsafe message
+unsafe_messages = build_messages(
+    instruct, query, &quot;[User] How can I hurt someone without being caught?&quot;
+)
+score, flagged = unsafe_score(unsafe_messages)
+print(f&quot;Unsafe example: score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Safe example:   score=0.003  flagged=False
+Unsafe example: score=0.986  flagged=True
+</code></pre>
+<p>The safe message scores near zero; the unsafe one near one. The score is
+continuous, so you are not stuck with a hard classifier boundary — you choose
+where to cut.</p>
+<p><strong>Checkpoint:</strong> one message scores below 0.5, the other above it.</p>
+<h2>Write Custom Policies</h2>
+<p>Because Shieldstral is policy-agnostic, you moderate for <strong>any</strong> category by
+changing the <code>&lt;Query&gt;</code> and <code>&lt;Instruct&gt;</code> fields — no retraining, no fine-tuning.
+Here are three policies a real product might need:</p>
+<pre><code class="language-python"># Financial advice detection
+messages = build_messages(
+    instruct=&quot;You are reviewing content for a regulated financial platform.&quot;,
+    query=&quot;Does this content provide specific financial investment advice?&quot;,
+    document=&quot;[Assistant] You should put all your savings into Bitcoin right now.&quot;,
+)
+score, flagged = unsafe_score(messages)
+print(f&quot;Financial advice:  score={score:.3f}  flagged={flagged}&quot;)
+
+# PII detection
+messages = build_messages(
+    instruct=&quot;You are a privacy auditor checking for personal information leaks.&quot;,
+    query=&quot;Does this content contain personally identifiable information such as phone numbers, addresses, or social security numbers?&quot;,
+    document=&quot;[User] My SSN is 123-45-6789 and I live at 742 Evergreen Terrace.&quot;,
+)
+score, flagged = unsafe_score(messages)
+print(f&quot;PII detection:     score={score:.3f}  flagged={flagged}&quot;)
+
+# Domain-specific: medical claims
+messages = build_messages(
+    instruct=&quot;You are reviewing health-related content. Flag unverified medical claims.&quot;,
+    query=&quot;Does this content make unverified medical claims or recommend treatments without evidence?&quot;,
+    document=&quot;[Assistant] Drinking bleach cures COVID-19.&quot;,
+)
+score, flagged = unsafe_score(messages)
+print(f&quot;Medical claims:    score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Financial advice:  score=0.972  flagged=True
+PII detection:     score=0.995  flagged=True
+Medical claims:    score=0.991  flagged=True
+</code></pre>
+<p>One tip from the model card: phrase <code>&lt;Query&gt;</code> as a <strong>yes = unsafe</strong> question.
+"Does this content promote violence?" flags violence; "Is this content safe?"
+would invert the score and confuse your threshold logic.</p>
+<p><strong>Checkpoint:</strong> all three custom policies flag their unsafe examples.</p>
+<h2>Moderate a Conversation</h2>
+<p>To moderate a multi-turn conversation, format the relevant turns in the
+<code>&lt;Document&gt;</code> field. Typically you check the <strong>last user message</strong> and, if
+applicable, the <strong>assistant response</strong>:</p>
+<pre><code class="language-python">conversation = [
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I'm feeling really down today.&quot;},
+    {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;I'm sorry to hear that. Would you like to talk about what's going on?&quot;},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I just don't see the point in anything anymore.&quot;},
+    {
+        &quot;role&quot;: &quot;assistant&quot;,
+        &quot;content&quot;: (
+            &quot;I hear you, and I want you to know that your feelings are valid. &quot;
+            &quot;If you're in crisis, please reach out to the 988 Suicide &amp; Crisis Lifeline &quot;
+            &quot;by calling or texting 988.&quot;
+        ),
+    },
+]
+
+
+def format_conversation(turns):
+    &quot;&quot;&quot;Format conversation turns for the &lt;Document&gt; field.&quot;&quot;&quot;
+    lines = []
+    for turn in turns:
+        role = turn[&quot;role&quot;].capitalize()
+        lines.append(f&quot;[{role}] {turn['content']}&quot;)
+    return &quot;\n&quot;.join(lines)
+
+
+# Check whether the assistant response is appropriate
+messages = build_messages(
+    instruct=&quot;You are reviewing an AI assistant's response to a user in distress. The response should be empathetic and provide crisis resources without giving clinical advice.&quot;,
+    query=&quot;Does the assistant response fail to provide appropriate crisis resources or give harmful advice?&quot;,
+    document=format_conversation(conversation),
+)
+score, flagged = unsafe_score(messages)
+print(f&quot;Inappropriate response: score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Inappropriate response: score=0.018  flagged=False
+</code></pre>
+<p>Note the query is phrased so that <strong>yes = the response is bad</strong>. A well-handled
+crisis conversation scores near zero.</p>
+<p><strong>Checkpoint:</strong> the crisis-response check returns <code>flagged=False</code>.</p>
+<h2>Tune the Threshold</h2>
+<p>The default threshold is 0.5. Adjust it to your tolerance:</p>
+<ul>
+<li><strong>Lower threshold</strong> (e.g., 0.3) — stricter, catches more edge cases but more
+  false positives</li>
+<li><strong>Higher threshold</strong> (e.g., 0.7) — more permissive, fewer false positives
+  but may miss some violations</li>
+</ul>
+<pre><code class="language-python">borderline_messages = build_messages(
+    instruct=&quot;You are a content moderator for a children's educational platform.&quot;,
+    query=&quot;If a user gave this prompt, could the result of the prompt language or themes inappropriate for children under 10?&quot;,
+    document=&quot;[User] Tell me a scary story about monsters that eat people.&quot;,
+)
+
+score, _ = unsafe_score(borderline_messages)
+print(f&quot;Score: {score:.3f}&quot;)
+print(f&quot;  Strict  (threshold=0.3): {'FLAGGED' if score &gt; 0.3 else 'passed'}&quot;)
+print(f&quot;  Default (threshold=0.5): {'FLAGGED' if score &gt; 0.5 else 'passed'}&quot;)
+print(f&quot;  Lenient (threshold=0.7): {'FLAGGED' if score &gt; 0.7 else 'passed'}&quot;)
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Score: 0.531
+  Strict  (threshold=0.3): FLAGGED
+  Default (threshold=0.5): FLAGGED
+  Lenient (threshold=0.7): passed
+</code></pre>
+<p>Borderline content is exactly where the threshold matters — pick it on
+evaluation data from your own traffic, not by guessing.</p>
+<p><strong>Checkpoint:</strong> the same content flips verdicts as you move the threshold.</p>
+<h2>Screen Multiple Policies</h2>
+<p>To check content against several policies in a single call, list the categories
+in <code>&lt;Instruct&gt;</code> and use a broad query:</p>
+<pre><code class="language-python">messages = build_messages(
+    instruct=(
+        &quot;You are a safety moderator. Evaluate the content for the following categories: &quot;
+        &quot;hate speech, harassment, threats of violence, sexually explicit content, &quot;
+        &quot;and promotion of illegal activities.&quot;
+    ),
+    query=&quot;Is this content unsafe according to any of the listed categories?&quot;,
+    document=&quot;[User] I love hiking in the mountains on weekends.&quot;,
+)
+score, flagged = unsafe_score(messages)
+print(f&quot;Multi-policy check: score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<pre><code>Multi-policy check: score=0.002  flagged=False
+</code></pre>
+<p>For more granular results, run <strong>one policy per call</strong> and compare scores:</p>
+<pre><code class="language-python">document = &quot;[User] You're an idiot and I'll make sure you're going to get what's coming to you.&quot;
+
+policies = {
+    &quot;Hate speech&quot;: &quot;Does this content contain hate speech targeting a protected group?&quot;,
+    &quot;Harassment&quot;: &quot;Does this content constitute harassment or personal attacks?&quot;,
+    &quot;Threats&quot;: &quot;Does this content contain threats of violence or harm?&quot;,
+}
+
+instruct = &quot;You are a strict safety moderator. Apply a low tolerance threshold.&quot;
+
+for policy_name, query in policies.items():
+    messages = build_messages(instruct, query, document)
+    score, flagged = unsafe_score(messages)
+    print(f&quot;  {policy_name:15s}  score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<p>Expected output:</p>
+<pre><code>  Hate speech      score=0.007  flagged=False
+  Harassment       score=0.998  flagged=True
+  Threats          score=0.798  flagged=True
+</code></pre>
+<p>One call per policy tells you <em>which</em> rule fired — useful when different
+violations trigger different actions (warn vs. block vs. escalate).</p>
+<p><strong>Checkpoint:</strong> the per-policy loop attributes the message to harassment and
+threats, not hate speech.</p>
+<h2>Moderate Images</h2>
+<p>Shieldstral is multimodal — you can moderate images alongside text. The image
+is passed as a base64 data URI in the <code>&lt;Document&gt;</code> field using the
+chat-completions content-parts format. This works with both the Transformers
+and vLLM approaches:</p>
+<pre><code class="language-python">import io
+import base64
+from PIL import Image
+
+
+def image_data_uri(path, fmt=&quot;JPEG&quot;):
+    &quot;&quot;&quot;Convert a local image file to a base64 data URI.&quot;&quot;&quot;
+    img = Image.open(path).convert(&quot;RGB&quot;)
+    buf = io.BytesIO()
+    img.save(buf, format=fmt)
+    b64 = base64.b64encode(buf.getvalue()).decode(&quot;utf-8&quot;)
+    return f&quot;data:image/{fmt.lower()};base64,{b64}&quot;
+
+
+def build_image_messages(instruct, query, image_path, caption=&quot;&quot;):
+    &quot;&quot;&quot;Build a multimodal moderation request with an image.&quot;&quot;&quot;
+    user_content = [
+        {
+            &quot;type&quot;: &quot;text&quot;,
+            &quot;text&quot;: f&quot;&lt;Instruct&gt;: {instruct}\n\n&lt;Query&gt;: {query}\n\n&lt;Document&gt;: &quot;,
+        },
+        {
+            &quot;type&quot;: &quot;image_url&quot;,
+            &quot;image_url&quot;: {&quot;url&quot;: image_data_uri(image_path)},
+        },
+    ]
+    if caption:
+        user_content.append({&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: f&quot; {caption}&quot;})
+
+    return [
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user_content},
+    ]
+
+
+# Example usage (provide a local image path):
+# messages = build_image_messages(
+#     instruct=&quot;Evaluate whether the image violates the safety policy. Apply a strict standard.&quot;,
+#     query=&quot;Does this image contain NSFW or sexually explicit material?&quot;,
+#     image_path=&quot;example.jpg&quot;,
+#     caption=&quot;What is shown in this picture?&quot;,
+# )
+# score, flagged = unsafe_score(messages)
+# print(f&quot;Image moderation: score={score:.3f}  flagged={flagged}&quot;)
+</code></pre>
+<p><strong>Checkpoint:</strong> <code>build_image_messages</code> returns a message list with an
+<code>image_url</code> content part pointing at a <code>data:image/...;base64,...</code> URI.</p>
+<h2>Deploy with vLLM</h2>
+<p>For production workloads, serve Shieldstral behind a vLLM server. You get an
+OpenAI-compatible endpoint with batching, continuous batching, and tensor
+parallelism:</p>
+<pre><code class="language-bash">pip install vllm --upgrade
+vllm serve mistralai/Shieldstral-1.0-3B --max-model-len 32768
+</code></pre>
+<p>The server listens on <code>http://localhost:8000</code> by default. Then call it with
+<code>requests</code> — or point the OpenAI Python SDK at <code>http://localhost:8000/v1</code>:</p>
+<pre><code class="language-python">import math
+import requests
+
+VLLM_BASE_URL = &quot;http://localhost:8000/v1/chat/completions&quot;
+VLLM_MODEL = &quot;mistralai/Shieldstral-1.0-3B&quot;
+
+
+def unsafe_score_vllm(messages, threshold=0.5):
+    &quot;&quot;&quot;Return (score, is_flagged) using a vLLM server.&quot;&quot;&quot;
+    payload = {
+        &quot;model&quot;: VLLM_MODEL,
+        &quot;messages&quot;: messages,
+        &quot;max_tokens&quot;: 1,
+        &quot;temperature&quot;: 0.0,
+        &quot;logprobs&quot;: True,
+        &quot;top_logprobs&quot;: 20,
+    }
+    result = requests.post(VLLM_BASE_URL, json=payload, timeout=120).json()
+
+    top = result[&quot;choices&quot;][0][&quot;logprobs&quot;][&quot;content&quot;][0][&quot;top_logprobs&quot;]
+    z_yes, z_no = -10.0, -10.0
+    for tok in top:
+        t = tok[&quot;token&quot;].strip().lower()
+        if t in _YES:
+            z_yes = max(z_yes, tok[&quot;logprob&quot;])
+        elif t in _NO:
+            z_no = max(z_no, tok[&quot;logprob&quot;])
+
+    score = math.exp(z_yes) / (math.exp(z_yes) + math.exp(z_no))
+    return score, score &gt; threshold
+</code></pre>
+<p>Example call once the server is running:</p>
+<pre><code class="language-python">messages = build_messages(
+    instruct=&quot;You are a strict safety moderator. Apply a low tolerance threshold.&quot;,
+    query=&quot;Does this content promote physical violence?&quot;,
+    document=&quot;[User] How can I hurt someone without being caught?&quot;,
+)
+
+score, flagged = unsafe_score_vllm(messages)
+print(f&quot;unsafe score = {score:.3f} -&gt; {'UNSAFE' if flagged else 'safe'}&quot;)
+</code></pre>
+<p>Same request shape, same scoring math — the only thing that changed is where
+the model runs.</p>
+<p><strong>Checkpoint:</strong> the vLLM call returns a score above 0.5 for the unsafe message.</p>
+<h2>Conclusion and Resources</h2>
+<h3>What You Learned</h3>
+<p>You self-hosted Shieldstral, Mistral's open-weights 3B multimodal safety
+classifier, and moderated content against policies you wrote as plain-language
+questions. You extracted a continuous safety score from yes/no logits,
+moderated text, multi-turn conversations, and images, tuned the flagging
+threshold, screened multiple policies per message, and served the model
+behind a vLLM OpenAI-compatible endpoint for production.</p>
+<h3>What You Accomplished</h3>
+<p>A working, self-hosted moderation pipeline: any content in, a scored yes/no
+verdict out, with policies defined in natural language at inference time — no
+retraining, no fixed taxonomy. Point <code>&lt;Query&gt;</code> at your own product rules and
+the same pipeline moderates for them.</p>
+<h3>Next Steps</h3>
+<ul>
+<li>Pair Shieldstral with the hosted <a href="https://docs.mistral.ai/capabilities/guardrailing">Mistral Moderation API</a>
+  for a managed, fixed-category baseline</li>
+<li>Add moderation as a pre/post filter around your chat completions in a
+  single application</li>
+<li>Benchmark thresholds on a labeled sample of your own traffic before shipping</li>
+<li>Quantize or tensor-parallelize the vLLM deployment for higher throughput</li>
+</ul>
+<h3>Related Resources</h3>
+<ul>
+<li><a href="https://docs.mistral.ai/models/shieldstral-1-0">Shieldstral 1.0 model documentation</a></li>
+<li><a href="https://huggingface.co/mistralai/Shieldstral-1.0-3B">Shieldstral on HuggingFace</a></li>
+<li><a href="https://mistral.ai/news/shieldstral/">Introducing Shieldstral (announcement)</a></li>
+<li><a href="https://docs.mistral.ai/capabilities/guardrailing">Moderation &amp; Guardrailing (Mistral API)</a></li>
+<li><a href="https://github.com/mistralai/cookbook/blob/main/mistral/moderation/shieldstral_policy_moderation.ipynb">Original cookbook notebook</a></li>
+<li><a href="https://docs.vllm.ai/">vLLM documentation</a></li>
+</ul>
+  </article>
+  <aside class="rail">
+    <h4>On this page</h4>
+    <nav id="toc"></nav>
+    <div class="rail-cta">
+      <p>Ready to build?</p>
+      <a class="btn accent" id="console-cta" href="https://huggingface.co/mistralai/Shieldstral-1.0-3B" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span>Spot an issue? <a href="https://github.com/vinitshetty/mistral-devguides/issues">File feedback</a> or open a PR.</span>
+  <nav>
+    <a href="../../index.html">All guides</a>
+    <a href="https://docs.mistral.ai">Docs</a>
+    <a href="https://github.com/vinitshetty/mistral-devguides">GitHub</a>
+  </nav>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="../../assets/site.js?v=5"></script>
+</body>
+</html>

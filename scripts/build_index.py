@@ -220,7 +220,7 @@ SHELL_TEMPLATE = """<!DOCTYPE html>
 <script type="application/ld+json">{jsonld}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="../../assets/site.css?v=7">
+<link rel="stylesheet" href="../../assets/site.css?v=8">
 </head>
 <body data-guide-id="{guide_id}">
 

@@ -199,23 +199,24 @@ async function initCatalog() {
     return true;
   }
 
-  function card(g) {
+  function featuredCard(g, index) {
     const art = firstArt(g);
     const link = guideLink(g.id);
-    const tags = [g.level, g.time].filter(Boolean)
-      .map((t) => '<span class="tag">' + escapeHtml(t) + "</span>").join("");
-    const date = g.updated ? '<span class="meta-item">' + escapeHtml(formatDate(g.updated)) + "</span>" : "";
     return (
-      '<div class="card">' +
-      '<a class="card-link" href="' + link + '">' +
-      '<div class="art">' + (art ? '<img src="' + art + '" alt="">' : "") + "</div>" +
-      '<span class="kicker">' + escapeHtml(g.contentType) + "</span>" +
+      '<div class="featured">' +
+      '<a class="card-link" href="' + link + '" style="display:contents">' +
+      '<div class="featured-body">' +
+      '<span class="kicker">' + (index === 0 ? "Featured - " : "") + escapeHtml(g.contentType) + "</span>" +
       "<h3>" + escapeHtml(g.title) + "</h3>" +
       "<p>" + escapeHtml(g.summary) + "</p>" +
-      "</a>" +
-      '<div class="meta">' + date + "</div>" +
-      '<div class="tags">' + tags + "</div>" +
-      "</div>"
+      '<div class="tags">' +
+      (g.updated ? '<span class="tag">Updated ' + escapeHtml(formatDate(g.updated)) + "</span>" : "") +
+      '<span class="tag hot">' + escapeHtml(g.level) + "</span>" +
+      '<span class="tag">' + escapeHtml(g.time) + "</span>" +
+      g.industries.map((i) => '<span class="tag">' + escapeHtml(i) + "</span>").join("") +
+      "</div></div>" +
+      '<div class="featured-art">' + (art ? '<img src="' + art + '" alt="">' : "") + "</div>" +
+      "</a></div>"
     );
   }
 
@@ -226,29 +227,9 @@ async function initCatalog() {
       return (b.updated || "").localeCompare(a.updated || "") || a.title.localeCompare(b.title);
     });
     countEl.innerHTML = "<strong>" + list.length + "</strong> result" + (list.length === 1 ? "" : "s");
-    grid.innerHTML = list.slice(1).map(card).join("");
-    const hero = list[0];
-    if (hero) {
-      const art = firstArt(hero);
-      const link = guideLink(hero.id);
-      featured.style.display = "";
-      featured.innerHTML =
-        '<a class="card-link" href="' + link + '" style="display:contents">' +
-        '<div class="featured-body">' +
-        '<span class="kicker">Featured - ' + escapeHtml(hero.contentType) + "</span>" +
-        "<h3>" + escapeHtml(hero.title) + "</h3>" +
-        "<p>" + escapeHtml(hero.summary) + "</p>" +
-        '<div class="tags">' +
-        (hero.updated ? '<span class="tag">Updated ' + escapeHtml(formatDate(hero.updated)) + "</span>" : "") +
-        '<span class="tag hot">' + escapeHtml(hero.level) + "</span>" +
-        '<span class="tag">' + escapeHtml(hero.time) + "</span>" +
-        hero.industries.map((i) => '<span class="tag">' + escapeHtml(i) + "</span>").join("") +
-        "</div></div>" +
-        '<div class="featured-art">' + (art ? '<img src="' + art + '" alt="">' : "") + "</div>" +
-        "</a>";
-    } else {
-      featured.style.display = "none";
-    }
+    featured.style.display = "none";
+    featured.innerHTML = "";
+    grid.innerHTML = list.map(featuredCard).join("");
     empty.hidden = list.length > 0;
     document.querySelectorAll("#filters input[data-facet]").forEach((cb) => {
       cb.closest("label").querySelector(".count").textContent = guides.filter((g) => {

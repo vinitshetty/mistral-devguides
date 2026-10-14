@@ -119,7 +119,7 @@ img { max-width: 100%; }
 .featured {
   display: grid; grid-template-columns: 1.3fr 1fr;
   border: 1.5px solid #111; border-radius: var(--radius);
-  background: #fff; overflow: hidden; margin-bottom: 28px;
+  background: #fff; overflow: hidden;
 }
 .featured:hover { box-shadow: 4px 4px 0 0 var(--surface-2); }
 @media (max-width: 760px) { .featured { grid-template-columns: 1fr; } }
@@ -143,7 +143,7 @@ img { max-width: 100%; }
 .tag.hot { background: #111; border-color: #111; color: #fff; }
 
 /* ---------- guide grid ---------- */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.grid { display: flex; flex-direction: column; gap: 28px; }
 .card {
   position: relative; display: flex; flex-direction: column;
   background: #fff; border: 1px solid var(--border);

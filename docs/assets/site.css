@@ -190,6 +190,7 @@ img { max-width: 100%; }
 .rail nav .toc-group > a { font-weight: 600; }
 .rail nav .toc-children { display: none; }
 .rail nav .toc-group.open .toc-children { display: block; }
+.rail nav .toc-ungrouped { display: block; }
 .rail nav a.sub { padding-left: 26px; font-size: 12.5px; color: var(--text-faint); font-weight: 400; }
 .rail nav a.sub:hover { color: var(--text-muted); }
 .rail nav a.sub.active { color: var(--text); }

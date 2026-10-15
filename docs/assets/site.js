@@ -406,6 +406,13 @@ function enhanceReader(content, toc, progress) {
     a.textContent = h.textContent;
     if (h.tagName === "H3") {
       a.classList.add("sub");
+      /* H3 before the first H2 (e.g. overview sub-sections): put it in an
+         ungrouped container so it still appears in the rail */
+      if (!kids) {
+        kids = document.createElement("div");
+        kids.className = "toc-children toc-ungrouped";
+        toc.appendChild(kids);
+      }
       kids.appendChild(a);
     } else {
       const group = document.createElement("div");

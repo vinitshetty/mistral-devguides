@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Agents SDK Walkthrough: Ten Steps to a Production Agent - Mistral Developer Guides</title>
+<meta name="description" content="Tour the full Mistral Agents SDK surface in ten runnable steps - from a one-shot agent to a production-grade travel agent with tools, hooks, subagents, permission gates, sessions, sandboxes, and one-command deployment.">
+<link rel="canonical" href="https://vinitshetty.github.io/mistral-devguides/guides/agents-sdk-walkthrough/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Agents SDK Walkthrough: Ten Steps to a Production Agent">
+<meta property="og:description" content="Tour the full Mistral Agents SDK surface in ten runnable steps - from a one-shot agent to a production-grade travel agent with tools, hooks, subagents, permission gates, sessions, sandboxes, and one-command deployment.">
+<meta property="og:url" content="https://vinitshetty.github.io/mistral-devguides/guides/agents-sdk-walkthrough/">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "The Agents SDK Walkthrough: Ten Steps to a Production Agent", "description": "Tour the full Mistral Agents SDK surface in ten runnable steps - from a one-shot agent to a production-grade travel agent with tools, hooks, subagents, permission gates, sessions, sandboxes, and one-command deployment.", "url": "https://vinitshetty.github.io/mistral-devguides/guides/agents-sdk-walkthrough/", "dateModified": "2026-11-19", "author": {"@type": "Person", "name": "Vinit Shetty"}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../../assets/site.css?v=9">
+</head>
+<body data-guide-id="agents-sdk-walkthrough">
+
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <a class="brand" href="../../index.html">
+    <span class="brand-mark">M</span>
+    <span class="brand-name">MISTRAL <em>DEVELOPER GUIDES</em></span>
+  </a>
+  <div class="reader-actions">
+    <a class="btn" id="fork-btn" href="https://github.com/vinitshetty/mistral-devguides" target="_blank" rel="noopener" style=""><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="3" r="1.75"/><circle cx="12" cy="3" r="1.75"/><circle cx="8" cy="13" r="1.75"/><path d="M4 4.75v1.5c0 1.5 1.5 3 4 3s4-1.5 4-3v-1.5"/><path d="M8 9.25v2"/></svg>Fork Repo</a>
+    <a class="btn accent" href="https://console.mistral.ai" target="_blank" rel="noopener">Open in Mistral Console</a>
+  </div>
+</header>
+
+<main class="reader">
+  <article class="markdown-body" id="content" data-prerendered="1">
+    <div class="guide-head">
+      <span class="kicker">Quickstart</span>
+      <h1>The Agents SDK Walkthrough: Ten Steps to a Production Agent</h1>
+      <div class="sub">Tour the full Mistral Agents SDK surface in ten runnable steps - from a one-shot agent to a production-grade travel agent with tools, hooks, subagents, permission gates, sessions, sandboxes, and one-command deployment.</div>
+      <div class="byline"><span>by Vinit Shetty (vinitshetty)</span><span>Intermediate</span><span>45 minutes</span></div>
+    </div>
+<h2>Overview</h2>
+<p>With the <a href="https://pypi.org/project/mistralai-agents/">Agents SDK</a> (<code>mistralai-agents</code>), an agent is a Python object: a model plus instructions, wired to tools, a sandbox, connectors, and controls. The SDK's harness drives the model-and-tool loop and records every step in a session. The same code runs in your process for development, self-hosted with <code>agents serve</code>, or Mistral-managed with <code>agents deploy</code>.</p>
+<p>This walkthrough ports an interactive offline demo into ten copy-paste steps. Every snippet builds on one running example - a travel agent - so each capability layers onto the last.</p>
+<h3>Prerequisites</h3>
+<ul>
+<li>Python 3.12+ and <a href="https://docs.astral.sh/uv/"><code>uv</code></a> (or pip)</li>
+<li>Basic async Python (<code>async</code>/<code>await</code>); snippets that use <code>await</code> run inside an <code>async def main()</code></li>
+</ul>
+<h3>What You'll Learn</h3>
+<ul>
+<li>Run a one-shot agent with <code>agents.Agent</code> and <code>agent.run()</code></li>
+<li>Attach tools with <code>@agents.tool</code> and bundle them in a <code>VibeHarness</code></li>
+<li>Intercept every tool call with hooks (<code>pre_tool_call</code>, <code>post_tool_call</code>, <code>on_event</code>)</li>
+<li>Get typed Pydantic objects back via <code>response_format</code></li>
+<li>Delegate to subagents with <code>ParentHarness</code></li>
+<li>Gate dangerous tool calls with ALLOW / ASK / DENY permission rules</li>
+<li>Persist multi-turn memory in sessions with snapshot and resume</li>
+<li>Execute code in a sandbox (create, execute, delete)</li>
+<li>Serve and deploy with <code>agents serve</code> / <code>agents deploy</code> and <code>to_workflow()</code></li>
+<li>Compose all of it into one production-grade agent declaration</li>
+</ul>
+<h3>What You'll Need</h3>
+<ul>
+<li>A <a href="https://auth.mistral.ai/ui/login">Mistral account</a> - free tier works</li>
+<li>An API key from the <a href="https://console.mistral.ai/">Mistral Console</a> (<strong>API Keys</strong> &gt; <em>Create new key</em> - shown only once), exported as <code>MISTRAL_API_KEY</code></li>
+<li>The SDK installed: <code>uv add mistralai-agents</code> (or <code>pip install mistralai-agents</code>)</li>
+</ul>
+<h3>What You'll Build</h3>
+<p>A production-shaped travel agent: typed tools, observability hooks, subagents, a human approval gate on bookings, session memory, a code sandbox, and a one-command deploy - all declared in one <code>agents.Agent(...)</code>.</p>
+<p><img alt="The Agents SDK surface: one Agent declaration wired to tools, hooks, subagents, permissions, a sandbox, and connectors, running in three modes" src="https://raw.githubusercontent.com/vinitshetty/mistral-devguides/main/agents-sdk-walkthrough/assets/agents-sdk-surface.svg" /></p>
+<p>Set up a project to paste the snippets into:</p>
+<pre><code class="language-bash">uv init --python 3.12 travel-agent &amp;&amp; cd travel-agent
+uv add mistralai-agents
+export MISTRAL_API_KEY=&quot;&lt;your-key&gt;&quot;
+</code></pre>
+<h2>Part 1 - Your First Agent</h2>
+<h3>Run a One-Shot Agent</h3>
+<p>The simplest form: an <code>Agent</code> with just <code>model</code> and <code>instructions</code>. Call <code>agent.run(prompt)</code> and get a <code>RunResult</code> back.</p>
+<pre><code class="language-python">import asyncio
+
+from mistralai import agents
+
+agent = agents.Agent(
+    model=&quot;mistral-medium-3-5&quot;,
+    instructions=&quot;You are a travel advisor.&quot;,
+)
+result = asyncio.run(agent.run(&quot;Top things in Tokyo?&quot;))
+print(result.text)         # the agent's response
+print(result.stop_reason)  # &quot;completed&quot;
+</code></pre>
+<p>Try it: ask "What are the top 3 things to do in Tokyo?" and the agent answers with Senso-ji Temple, Shibuya Crossing and Harajuku, and Tsukiji Outer Market.</p>
+<p>Checkpoint: one object, one call, one answer - the whole agent loop ran in your process.</p>
+<h3>Add Tools with a Harness</h3>
+<p>Tools are plain Python functions decorated with <code>@agents.tool</code>; the SDK auto-generates the schema from the signature and docstring. <code>VibeHarness</code> bundles tools + sandbox + hooks as the agent's reusable "body".</p>
+<pre><code class="language-python">@agents.tool
+def get_weather(city: str) -&gt; dict:
+    &quot;&quot;&quot;Get current weather for a city.&quot;&quot;&quot;
+    return {&quot;temp&quot;: &quot;18C&quot;, &quot;condition&quot;: &quot;Sunny&quot;}
+
+harness = agents.VibeHarness(
+    tools=[get_weather, search_flights, search_hotels],
+)
+agent = agents.Agent(
+    model=&quot;mistral-medium-3-5&quot;,
+    instructions=&quot;Use tools to help the user.&quot;,
+    harness=harness,
+)
+</code></pre>
+<p>Try it: "I want to visit Paris from New York. Check weather, flights for Dec 20, and hotels." The agent calls <code>get_weather</code>, <code>search_flights</code>, <code>search_hotels</code> in sequence, then answers with all three results.</p>
+<p>Checkpoint: the model now calls your functions, not just text.</p>
+<h3>Intercept Calls with Hooks</h3>
+<p>Hooks are middleware for every agent step: <code>pre_tool_call</code> and <code>post_tool_call</code> wrap each tool call, and the <code>on_event</code> tap observes SDK events without blocking. Return <code>Continue</code>, <code>Skip</code>, or <code>Handled</code> to control the flow.</p>
+<pre><code class="language-python">class ToolLogger(agents.Hook):
+    async def pre_tool_call(self, ctx, call):
+        print(f&quot;Calling: {call.name}&quot;)
+        return agents.hook.Continue(value=call)
+
+    async def post_tool_call(self, ctx, result):
+        print(&quot;Tool returned&quot;)
+        return result
+
+    @staticmethod
+    async def on_event(ctx, event):
+        print(f&quot;Event: {type(event).__name__}&quot;)
+
+harness = agents.VibeHarness(
+    tools=[get_weather, search_flights],
+    hooks=[ToolLogger()],
+)
+</code></pre>
+<p>Checkpoint: every tool call now passes through your code - the seam for logging, audit, and policy.</p>
+<h3>Get Typed Output</h3>
+<p>Pass a Pydantic model as <code>response_format</code> to get a typed object in <code>result.output</code> instead of free text. Each run can request a different shape; the SDK backs this with an internal <code>final_output</code> tool.</p>
+<pre><code class="language-python">class TravelPlan(BaseModel):
+    destination: str
+    duration_days: int
+    estimated_budget: str
+    highlights: list[str]
+    recommended_season: str
+
+result = await agent.run(
+    &quot;Plan a week in Japan.&quot;,
+    response_format=TravelPlan,
+)
+plan = result.output  # a TravelPlan instance
+print(plan.destination)   # &quot;Japan&quot;
+print(plan.highlights)    # [&quot;Tokyo - Shibuya, Senso-ji, ...&quot;, ...]
+</code></pre>
+<p>Example output:</p>
+<pre><code class="language-json">{
+  &quot;destination&quot;: &quot;Japan&quot;,
+  &quot;duration_days&quot;: 7,
+  &quot;estimated_budget&quot;: &quot;$2,500 - $3,500&quot;,
+  &quot;highlights&quot;: [&quot;Tokyo - Shibuya, Senso-ji, Tsukiji Market&quot;, &quot;Kyoto - Fushimi Inari&quot;, &quot;...&quot;],
+  &quot;recommended_season&quot;: &quot;Spring (March-April) for cherry blossoms&quot;
+}
+</code></pre>
+<p>Checkpoint: <code>result.text</code> is prose; <code>result.output</code> is a validated Python object you can pipe straight into the rest of your app.</p>
+<h2>Part 2 - Production-Grade Controls</h2>
+<h3>Delegate with Subagents</h3>
+<p>A parent agent can delegate tasks to child agents. Children inherit the parent's tools via <code>ParentHarness</code>, or run in isolation; dispatch is inline (blocking) or <code>background=True</code> (async).</p>
+<pre><code class="language-python">researcher = agents.Agent(name=&quot;researcher&quot;,
+    instructions=&quot;Gather weather, flights, hotels.&quot;)
+planner = agents.Agent(name=&quot;planner&quot;,
+    instructions=&quot;Create a day-by-day itinerary.&quot;)
+
+harness = agents.VibeHarness(
+    tools=[get_weather, search_flights, search_hotels],
+    hooks=[agents.beta.Subagents(subagents=[
+        agents.beta.Subagent(agent=researcher, harness=agents.ParentHarness()),
+        agents.beta.Subagent(agent=planner, harness=agents.ParentHarness()),
+    ])],
+)
+</code></pre>
+<p>Try it: "Plan a 3-day trip to Paris from New York, departing Dec 15." Watch <code>researcher</code> collect the facts, then <code>planner</code> turn them into a day-by-day itinerary with a budget.</p>
+<p>Checkpoint: one prompt, two specialists - delegation keeps each model call small and focused.</p>
+<h3>Gate Tools with Permissions</h3>
+<p>Control which tools the agent may call with glob-based rules. Each rule maps tool patterns to <code>ALLOW</code>, <code>DENY</code>, or <code>ASK</code> (human approval); anything unmatched hits the <code>default</code>.</p>
+<pre><code class="language-python">Permission = agents.beta.Permission
+gate = Permission(
+    rules=[
+        Permission.Rule(
+            tools=[&quot;search_*&quot;, &quot;get_*&quot;],
+            decision=Permission.Decision.ALLOW,
+        ),
+        Permission.Rule(
+            tools=[&quot;book_*&quot;],
+            decision=Permission.Decision.ASK,
+        ),
+    ],
+    default=Permission.Decision.DENY,
+    prompter=agents.beta.permission.stdin_prompter,
+)
+harness = agents.VibeHarness(
+    tools=[search_flights, book_trip],
+    hooks=[gate],
+)
+</code></pre>
+<p>Try it: "Find flights from NYC to Paris on Dec 15 and book the cheapest for John Doe." The agent searches freely, then the <code>book_trip</code> call pauses for your approval. Deny it and the agent reports the booking was denied; approve it and you get confirmation <code>BOOK-2024-7890</code> for flight AF123, status confirmed.</p>
+<p>Checkpoint: read-only tools flow, money-moving tools wait for a human.</p>
+<h3>Persist Memory in Sessions</h3>
+<p>A <code>Session</code> carries conversation memory across turns. <code>s.to_state()</code> snapshots everything (history + capabilities); resume later with <code>create_session(state=snapshot)</code> - even after a crash.</p>
+<pre><code class="language-python"># Session 1: build context
+async with agent.create_session() as s:
+    await s.run(&quot;My name is Alice.&quot;)
+    await s.run(&quot;Weather in London?&quot;)
+    snapshot = s.to_state()  # save everything
+
+# Session 2: resume (even after restart)
+async with agent.create_session(state=snapshot) as s:
+    r = await s.run(&quot;What's my name?&quot;)
+    print(r.text)  # &quot;Alice&quot; - memory preserved!
+</code></pre>
+<p>Checkpoint: the snapshot is the whole conversation - serialize it anywhere and the agent picks up mid-thought.</p>
+<h3>Run Code in a Sandbox</h3>
+<p>A sandbox gives the agent a secure environment to run code, with a <code>create</code> &gt; <code>execute</code> &gt; <code>delete</code> lifecycle managed for you. Built-in types: <code>MistralSandbox</code> (managed container), <code>LocalDockerSandbox</code> (your Docker - good for dev/CI), <code>BashkitSandbox</code> (in-process shell). Bring your own infra by subclassing <code>agents.CustomSandbox</code>.</p>
+<pre><code class="language-python">harness = agents.VibeHarness(
+    sandbox=agents.MistralSandbox()          # managed
+)
+harness = agents.VibeHarness(
+    sandbox=agents.LocalDockerSandbox(       # dev/CI
+        image=&quot;python:3.12-bookworm&quot;,
+        setup_script=&quot;pip install pandas&quot;,
+    )
+)
+</code></pre>
+<p>Try it: "Calculate fares for 3 passengers from NYC to Paris with early bird and group discounts." Watch <code>sandbox_create</code> provision <code>sbx-2024-f7a3</code> (python:3.12-bookworm), <code>sandbox_execute</code> run the fare engine, then <code>sandbox_delete</code> free the resources:</p>
+<pre><code class="language-text">Final fare per person:     $390.00
+Total for 3 passengers:    $1,170.00
+Savings:                   $330.00 (22%)
+</code></pre>
+<p>Checkpoint: the agent's code ran in a container that no longer exists - create, execute, delete.</p>
+<h2>Part 3 - Ship It</h2>
+<h3>Serve and Deploy</h3>
+<p>The SDK has two run modes. Local: <code>agent.run()</code> - in-process, zero infra, instant feedback. Worker: <code>agents serve</code> / <code>agents deploy</code> - a durable execution with crash recovery and scaling. <code>to_workflow()</code> promotes any agent to a registered workflow class.</p>
+<pre><code class="language-bash">agents serve                          # durable worker on your servers
+agents deploy . --name travel-agent   # Mistral-managed production deployment
+</code></pre>
+<pre><code class="language-python">import mistralai.workflows as workflows
+
+TravelWorkflow = agent.to_workflow(name=&quot;travel-agent&quot;, type=&quot;chat&quot;)
+await workflows.run_worker([TravelWorkflow])
+</code></pre>
+<p>In deployed workers, use the replay-safe helpers instead of the stdlib: <code>agents.now()</code> instead of <code>datetime.now()</code>, <code>agents.sleep()</code> instead of <code>asyncio.sleep()</code>, <code>agents.uuid4()</code> instead of <code>uuid.uuid4()</code>. They keep crash recovery deterministic.</p>
+<p>Checkpoint: the same <code>main.py</code> runs on your laptop and in production - only the command changes.</p>
+<h3>Compose the Full Agent</h3>
+<p>The <code>Agent</code> constructor is the single entrypoint: it accepts <code>environment</code> (sandbox), <code>tools</code>, <code>connectors</code>, <code>mcps</code>, and <code>hooks</code> directly. Bundle them into a <code>VibeHarness</code> instead when you want to reuse the set across agents.</p>
+<pre><code class="language-python">agent = agents.Agent(
+    model=&quot;mistral-large-4&quot;,
+    instructions=&quot;You are a travel coordinator.&quot;,
+
+    environment=agents.MistralSandbox(),          # where code runs
+    tools=[get_weather, search_flights, book_trip],
+
+    connectors=[                                   # Studio connectors, via MCP
+        agents.connector(&quot;brave_search&quot;),
+        agents.connector(&quot;slack&quot;),
+    ],
+    mcps={                                         # remote MCP servers
+        &quot;github_copilot&quot;: agents.RemoteMCP(
+            url=&quot;https://api.githubcopilot.com/mcp/&quot;,
+            auth_header_env_vars={&quot;Authorization&quot;: &quot;GITHUB_MCP_TOKEN&quot;},
+        ),
+    },
+    hooks=[
+        AuditHook(),                               # observability
+        agents.beta.Permission(                    # ALLOW / ASK / DENY
+            rules=[...],
+            default=agents.beta.Permission.Decision.DENY,
+        ),
+        agents.beta.Subagents(                     # delegation
+            subagents=[
+                agents.beta.Subagent(researcher, agents.ParentHarness()),
+                agents.beta.Subagent(planner, agents.ParentHarness()),
+            ],
+        ),
+    ],
+)
+</code></pre>
+<p>Try it: "Plan a 3-day trip to Tokyo from New York, departing Jan 10. Budget around $2000." The coordinator delegates research and planning, searches via connectors, runs code in the sandbox, and asks before booking - all in one declaration.</p>
+<p>Checkpoint: custom tools + connectors + MCP + sandbox + hooks + subagents + permission - one <code>Agent(...)</code>, production-grade.</p>
+<h2>Conclusion and Resources</h2>
+<h3>What You Learned</h3>
+<ul>
+<li><code>agents.Agent</code> + <code>agent.run()</code> for one-shot runs; <code>RunResult</code> carries <code>.text</code>, <code>.output</code>, <code>.stop_reason</code></li>
+<li><code>@agents.tool</code> functions with auto-generated schemas, bundled in a <code>VibeHarness</code></li>
+<li>Hooks (<code>pre_tool_call</code> / <code>post_tool_call</code> / <code>on_event</code>) as middleware with <code>Continue</code> / <code>Skip</code> / <code>Handled</code></li>
+<li><code>response_format=Model</code> for typed Pydantic output</li>
+<li>Subagents with <code>ParentHarness</code> for parent-child delegation</li>
+<li>Glob-based <code>Permission</code> rules (ALLOW / ASK / DENY) for human-in-the-loop control</li>
+<li>Sessions with <code>to_state()</code> snapshots and <code>create_session(state=...)</code> resume</li>
+<li>Sandboxes (<code>MistralSandbox</code>, <code>LocalDockerSandbox</code>, <code>BashkitSandbox</code>) with a create &gt; execute &gt; delete lifecycle</li>
+<li><code>agents serve</code> / <code>agents deploy</code> / <code>to_workflow()</code> to ship, with replay-safe <code>agents.now()</code> / <code>agents.sleep()</code> / <code>agents.uuid4()</code></li>
+</ul>
+<h3>Next Steps</h3>
+<ul>
+<li>Scaffold a real project with <code>agents init</code> and chat in the terminal with <code>agents chat</code></li>
+<li>Deploy with <code>agents deploy</code> and open sessions by agent name from your app</li>
+<li>Add connectors and libraries so the agent works with your company data</li>
+<li>Watch each turn as a trace in the Mistral Console</li>
+</ul>
+<h3>Related Resources</h3>
+<ul>
+<li><a href="https://pypi.org/project/mistralai-agents/">Agents SDK on PyPI</a> - install and hello world</li>
+<li><a href="https://docs.mistral.ai/studio/agents/introduction">Managed Agents overview</a> - concepts and run modes</li>
+<li><a href="https://docs.mistral.ai/studio/agents/getting-started/quickstart">Agents SDK quickstart</a> - project scaffold, tools, terminal chat</li>
+<li><a href="https://docs.mistral.ai/getting-started/quickstarts/studio/build-an-agent-end-to-end">Build and deploy an agent end to end</a> - the full Studio loop: build, evaluate, deploy, observe</li>
+<li><a href="https://docs.mistral.ai/studio/agents/learn/where-it-runs/serve">Self-hosted deployment with <code>agents serve</code></a></li>
+<li><a href="https://docs.mistral.ai/studio/deployments">Deployments in the Mistral Console</a></li>
+<li><a href="https://docs.mistral.ai/studio/agents/getting-started/from-agents-api">Migrating from the Agents API</a></li>
+</ul>
+  </article>
+  <aside class="rail">
+    <h4>On this page</h4>
+    <nav id="toc"></nav>
+    <div class="rail-cta">
+      <p>Ready to build?</p>
+      <a class="btn accent" id="console-cta" href="https://console.mistral.ai/" target="_blank" rel="noopener" style="display:block;text-align:center">Open in Mistral Console</a>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <span>Spot an issue? <a href="https://github.com/vinitshetty/mistral-devguides/issues">File feedback</a> or open a PR.</span>
+  <nav>
+    <a href="../../index.html">All guides</a>
+    <a href="https://docs.mistral.ai">Docs</a>
+    <a href="https://github.com/vinitshetty/mistral-devguides">GitHub</a>
+  </nav>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="../../assets/site.js?v=7"></script>
+</body>
+</html>

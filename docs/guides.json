@@ -1,7 +1,31 @@
 {
-  "generated_at": "2026-10-15T05:56:12+00:00",
-  "count": 2,
+  "generated_at": "2026-11-19T09:19:56+00:00",
+  "count": 3,
   "guides": [
+    {
+      "id": "agents-sdk-walkthrough",
+      "title": "The Agents SDK Walkthrough: Ten Steps to a Production Agent",
+      "summary": "Tour the full Mistral Agents SDK surface in ten runnable steps - from a one-shot agent to a production-grade travel agent with tools, hooks, subagents, permission gates, sessions, sandboxes, and one-command deployment.",
+      "categories": [
+        "Quickstart",
+        "Agents > Agents SDK",
+        "AI Studio > Agents"
+      ],
+      "contentType": "Quickstart",
+      "industries": [],
+      "products": [
+        "Agents",
+        "AI Studio"
+      ],
+      "level": "Intermediate",
+      "time": "45 minutes",
+      "authors": "Vinit Shetty (vinitshetty)",
+      "fork": "https://github.com/vinitshetty/mistral-devguides",
+      "platform": "https://console.mistral.ai/",
+      "language": "en",
+      "art": "agents-sdk-walkthrough/assets/agents-sdk-surface.svg",
+      "updated": "2026-11-19"
+    },
     {
       "id": "shieldstral-policy-moderation",
       "title": "Policy-Based Moderation with Shieldstral",
